@@ -16,15 +16,77 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
 
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
   <style>
     html, body, #map { height: 100%; margin: 0; padding: 0; }
+    
+    /* Loading indicator */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none;
+    }
+    
+    /* Custom tooltip styles */
+    .leaflet-tooltip {
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    /* Legend */
+    .legend {
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      line-height: 18px;
+      font-size: 14px;
+    }
+    
+    .legend-item {
+      margin: 3px 0;
+    }
+    
+    .legend-color {
+      width: 20px;
+      height: 3px;
+      display: inline-block;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div id="loading" class="loading">
+    <i class="fa fa-spinner fa-spin"></i> Loading...
+  </div>
 
   <script>
     const map = L.map('map').setView([16.5, 102.5], 8);
+
+    // Loading indicator functions
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+    }
+    
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
 
     // Base map
     const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -32,68 +94,148 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // 1. AL Track (red)
-    const layerALTrack = omnivore.kml("AL_Track_KKNK.kml")
-      .on('ready', function () {
-        this.eachLayer(layer => {
-          if (layer.setStyle) layer.setStyle({ color: "red", weight: 3 });
-        });
-        map.fitBounds(this.getBounds());
-      }).addTo(map);
-
-    // 2. Station (gray)
-    const layerStation = omnivore.kml("Station.kml")
-      .on('ready', function () {
-        this.eachLayer(layer => {
-          if (layer.setStyle) layer.setStyle({ color: "gray", weight: 2 });
-        });
-      });
-
-    // 3. Station Name (Train icons + permanent labels)
-    const trainIcon = L.AwesomeMarkers.icon({
-      icon: 'train',
-      markerColor: 'blue',
-      prefix: 'fa'
-    });
-
+    // Initialize all layer groups
+    const layerALTrack = L.layerGroup();
+    const layerStation = L.layerGroup();
     const layerStationName = L.layerGroup();
-    omnivore.kml("Station_Name.kml")
-      .on('ready', function () {
-        this.eachLayer(layer => {
-          if (layer.feature && layer.feature.properties && layer.feature.properties.name) {
-            const label = layer.feature.properties.name;
-
-            const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
-              .bindTooltip(label, { permanent: true, direction: 'top', offset: [0, -10] });
-
-            marker.addTo(layerStationName);
-          }
-        });
-      });
-
-    // 4. DOH layer (purple), lazy load
     const layerDOH = L.layerGroup();
 
-    function loadDOHLayer() {
-      if (layerDOH.getLayers().length === 0) {
-        fetch("DOH_Show_KM.json")
-          .then(res => res.json())
-          .then(data => {
-            L.geoJSON(data, { style: { color: 'purple', weight: 2 } })
-              .addTo(layerDOH);
-            layerDOH.addTo(map);
+    // State tracking
+    let isALTrackLoaded = false;
+    let isStationLoaded = false;
+    let isStationNameLoaded = false;
+    let isDOHLoaded = false;
+    let isDOHLoading = false;
+
+    // 1. AL Track (red)
+    function loadALTrack() {
+      if (!isALTrackLoaded) {
+        showLoading();
+        omnivore.kml("AL_Track_KKNK.kml")
+          .on('ready', function () {
+            this.eachLayer(layer => {
+              if (layer.setStyle) {
+                layer.setStyle({ color: "red", weight: 3 });
+              }
+            });
+            
+            // Add to layer group
+            this.eachLayer(layer => {
+              layerALTrack.addLayer(layer);
+            });
+            
+            // Fit bounds only if this is the first layer
+            if (layerALTrack.getLayers().length > 0) {
+              map.fitBounds(layerALTrack.getBounds());
+            }
+            
+            isALTrackLoaded = true;
+            hideLoading();
+          })
+          .on('error', function(err) {
+            console.error('Error loading AL Track KML:', err);
+            hideLoading();
+            alert('Error loading AL Track data');
           });
-      } else {
-        layerDOH.addTo(map);
       }
     }
 
-    function removeDOHLayer() {
-      layerDOH.clearLayers();
-      map.removeLayer(layerDOH);
+    // 2. Station (gray)
+    function loadStation() {
+      if (!isStationLoaded) {
+        showLoading();
+        omnivore.kml("Station.kml")
+          .on('ready', function () {
+            this.eachLayer(layer => {
+              if (layer.setStyle) {
+                layer.setStyle({ color: "gray", weight: 2 });
+              }
+              layerStation.addLayer(layer);
+            });
+            isStationLoaded = true;
+            hideLoading();
+          })
+          .on('error', function(err) {
+            console.error('Error loading Station KML:', err);
+            hideLoading();
+            alert('Error loading Station data');
+          });
+      }
     }
 
-    // Layer control with all overlays
+    // 3. Station Name (Train icons + permanent labels)
+    function loadStationName() {
+      if (!isStationNameLoaded) {
+        showLoading();
+        
+        const trainIcon = L.AwesomeMarkers.icon({
+          icon: 'train',
+          markerColor: 'blue',
+          prefix: 'fa'
+        });
+
+        omnivore.kml("Station_Name.kml")
+          .on('ready', function () {
+            this.eachLayer(layer => {
+              if (layer.feature && layer.feature.properties && layer.feature.properties.name) {
+                const label = layer.feature.properties.name;
+                const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
+                  .bindTooltip(label, { 
+                    permanent: true, 
+                    direction: 'top', 
+                    offset: [0, -10],
+                    className: 'station-tooltip'
+                  });
+                layerStationName.addLayer(marker);
+              }
+            });
+            isStationNameLoaded = true;
+            hideLoading();
+          })
+          .on('error', function(err) {
+            console.error('Error loading Station Name KML:', err);
+            hideLoading();
+            alert('Error loading Station Name data');
+          });
+      }
+    }
+
+    // 4. DOH layer (purple), lazy load
+    function loadDOHLayer() {
+      if (!isDOHLoaded && !isDOHLoading) {
+        isDOHLoading = true;
+        showLoading();
+        
+        fetch("DOH_Show_KM.json")
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            const geoJsonLayer = L.geoJSON(data, { 
+              style: { 
+                color: 'purple', 
+                weight: 2,
+                opacity: 0.7,
+                fillOpacity: 0.3
+              }
+            });
+            
+            layerDOH.addLayer(geoJsonLayer);
+            isDOHLoaded = true;
+            isDOHLoading = false;
+            hideLoading();
+          })
+          .catch(err => {
+            console.error('Error loading DOH data:', err);
+            isDOHLoading = false;
+            hideLoading();
+            alert('Error loading DOH data. Please check if DOH_Show_KM.json exists.');
+          });
+      }
+    }
+
+    // Layer control with custom overlay control
     const overlays = {
       "AL Track KKNK (red)": layerALTrack,
       "Station (gray)": layerStation,
@@ -101,19 +243,83 @@
       "DOH KM (purple)": layerDOH
     };
 
-    L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+    // Add layer control
+    const layerControl = L.control.layers(null, overlays, { collapsed: false }).addTo(map);
 
-    // Listen for overlayadd/remove for DOH lazy load
+    // Handle layer add/remove events
     map.on("overlayadd", function(e) {
-      if (e.name === "DOH KM (purple)") {
-        loadDOHLayer();
+      switch(e.name) {
+        case "AL Track KKNK (red)":
+          loadALTrack();
+          break;
+        case "Station (gray)":
+          loadStation();
+          break;
+        case "Station Name (train icon)":
+          loadStationName();
+          break;
+        case "DOH KM (purple)":
+          loadDOHLayer();
+          break;
       }
     });
 
     map.on("overlayremove", function(e) {
-      if (e.name === "DOH KM (purple)") {
-        removeDOHLayer();
-      }
+      // Layers are automatically removed from map by Leaflet
+      // But we keep the data loaded for next time
+    });
+
+    // Add legend
+    const legend = L.control({position: 'bottomright'});
+    legend.onAdd = function (map) {
+      const div = L.DomUtil.create('div', 'legend');
+      div.innerHTML = `
+        <div class="legend-item">
+          <span class="legend-color" style="background-color: red;"></span>
+          AL Track KKNK
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background-color: gray;"></span>
+          Station
+        </div>
+        <div class="legend-item">
+          <i class="fa fa-train" style="color: blue; margin-right: 8px;"></i>
+          Station Name
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background-color: purple;"></span>
+          DOH KM
+        </div>
+      `;
+      return div;
+    };
+    legend.addTo(map);
+
+    // Initialize with AL Track loaded and displayed
+    loadALTrack();
+    layerALTrack.addTo(map);
+
+    // Add scale control
+    L.control.scale({
+      metric: true,
+      imperial: false,
+      position: 'bottomleft'
+    }).addTo(map);
+
+    // Add zoom control to top right
+    map.removeControl(map.zoomControl);
+    L.control.zoom({
+      position: 'topright'
+    }).addTo(map);
+
+    // Error handling for missing files
+    window.addEventListener('error', function(e) {
+      console.error('Global error:', e.error);
+    });
+
+    // Handle map click for debugging
+    map.on('click', function(e) {
+      console.log('Clicked at:', e.latlng);
     });
 
   </script>
