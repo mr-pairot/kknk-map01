@@ -177,63 +177,98 @@
           hideLoading();
           console.error('Station Name loading timeout');
           alert('Loading Station Name data timeout. Please check if Station_Name.kml file exists and is accessible.');
-        }, 10000); // 10 seconds timeout
+          isStationNameLoaded = false; // Reset flag so user can try again
+        }, 15000); // 15 seconds timeout
 
-        omnivore.kml("Station_Name.kml")
-          .on('ready', function () {
-            clearTimeout(timeoutId);
-            console.log('Station Name KML loaded, processing layers...');
-            
-            let markerCount = 0;
-            this.eachLayer(layer => {
-              try {
-                // Check different possible property names
-                let label = null;
-                if (layer.feature && layer.feature.properties) {
-                  label = layer.feature.properties.name || 
-                         layer.feature.properties.Name || 
-                         layer.feature.properties.NAME ||
-                         layer.feature.properties.description ||
-                         layer.feature.properties.Description;
-                }
-                
-                // Alternative: check if layer has getPopup or other methods
-                if (!label && layer.getPopup && layer.getPopup()) {
-                  label = layer.getPopup().getContent();
-                }
-                
-                // If still no label, use coordinates as fallback
-                if (!label) {
-                  const latlng = layer.getLatLng();
-                  label = `Station (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
-                }
-                
-                if (layer.getLatLng && layer.getLatLng()) {
-                  const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
-                    .bindTooltip(label, { 
-                      permanent: true, 
-                      direction: 'top', 
-                      offset: [0, -10],
-                      className: 'station-tooltip'
-                    });
-                  layerStationName.addLayer(marker);
-                  markerCount++;
-                }
-              } catch (error) {
-                console.error('Error processing station layer:', error, layer);
+        const kmlLayer = omnivore.kml("Station_Name.kml");
+        
+        kmlLayer.on('ready', function () {
+          clearTimeout(timeoutId);
+          console.log('Station Name KML loaded, processing layers...');
+          console.log('Total layers found:', this.getLayers().length);
+          
+          let markerCount = 0;
+          let processedCount = 0;
+          
+          this.eachLayer(layer => {
+            processedCount++;
+            try {
+              console.log(`Processing layer ${processedCount}:`, layer);
+              
+              // Check different possible property names
+              let label = null;
+              if (layer.feature && layer.feature.properties) {
+                label = layer.feature.properties.name || 
+                       layer.feature.properties.Name || 
+                       layer.feature.properties.NAME ||
+                       layer.feature.properties.description ||
+                       layer.feature.properties.Description;
+                       
+                console.log(`Layer ${processedCount} properties:`, layer.feature.properties);
               }
-            });
-            
-            console.log(`Created ${markerCount} station markers`);
-            isStationNameLoaded = true;
-            hideLoading();
-          })
-          .on('error', function(err) {
-            clearTimeout(timeoutId);
-            console.error('Error loading Station Name KML:', err);
-            hideLoading();
-            alert('Error loading Station Name data: ' + err.message);
+              
+              // Alternative: check if layer has options.title (sometimes used by omnivore)
+              if (!label && layer.options && layer.options.title) {
+                label = layer.options.title;
+              }
+              
+              // Check if it's a marker and get popup content
+              if (!label && layer.getPopup && layer.getPopup()) {
+                label = layer.getPopup().getContent();
+              }
+              
+              // If still no label, use coordinates as fallback
+              if (!label && layer.getLatLng && layer.getLatLng()) {
+                const latlng = layer.getLatLng();
+                label = `Station (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
+              }
+              
+              if (layer.getLatLng && layer.getLatLng() && label) {
+                const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
+                  .bindTooltip(label, { 
+                    permanent: true, 
+                    direction: 'top', 
+                    offset: [0, -10],
+                    className: 'station-tooltip'
+                  });
+                layerStationName.addLayer(marker);
+                markerCount++;
+                console.log(`Created marker ${markerCount}: ${label}`);
+              } else {
+                console.warn(`Layer ${processedCount} skipped - no valid data:`, {
+                  hasLatLng: !!(layer.getLatLng && layer.getLatLng()),
+                  label: label,
+                  layer: layer
+                });
+              }
+            } catch (error) {
+              console.error(`Error processing layer ${processedCount}:`, error, layer);
+            }
           });
+          
+          console.log(`Station Name processing complete: ${markerCount} markers created from ${processedCount} layers`);
+          
+          if (markerCount === 0) {
+            console.warn('No markers were created. This might indicate a parsing issue.');
+            alert('Warning: No station markers were created. The KML file might have a different structure than expected.');
+          }
+          
+          isStationNameLoaded = true;
+          hideLoading();
+        });
+        
+        kmlLayer.on('error', function(err) {
+          clearTimeout(timeoutId);
+          console.error('Error loading Station Name KML:', err);
+          hideLoading();
+          alert('Error loading Station Name data: ' + (err.message || 'Unknown error'));
+          isStationNameLoaded = false; // Reset flag so user can try again
+        });
+        
+        // Monitor loading progress
+        kmlLayer.on('addlayer', function(e) {
+          console.log('Layer added to KML:', e.layer);
+        });
       }
     }
 
