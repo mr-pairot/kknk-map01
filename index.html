@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Leaflet Multi-layer from Google Drive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    #map { height: 100vh; width: 100vw; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Leaflet Core -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Omnivore for KML -->
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+
+  <script>
+    const map = L.map('map').setView([16.5, 102.5], 8); // กำหนดกลางประเทศไทยหรือขอนแก่น-นครพนม
+
+    // พื้นหลังแผนที่
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // ลิงก์ไฟล์
+    const files = {
+      kml1: "https://drive.google.com/uc?export=download&id=1I0K0SKSBEVV6eW56-WqgBl02E1nkSygC",
+      kml2: "https://drive.google.com/uc?export=download&id=1YQtb8TxnPOXr7aR9-TuJ4PVksYja0yoG",
+      json: "https://drive.google.com/uc?export=download&id=1z-b21It3k0a_LkZDayyt2pCZhNQlJaWJ"
+    };
+
+    // โหลด KML 1
+    omnivore.kml(files.kml1)
+      .on('ready', function () {
+        map.fitBounds(this.getBounds());
+      })
+      .addTo(map);
+
+    // โหลด KML 2
+    omnivore.kml(files.kml2).addTo(map);
+
+    // โหลด GeoJSON (JSON)
+    fetch(files.json)
+      .then(res => res.json())
+      .then(data => {
+        L.geoJSON(data, {
+          style: {
+            color: 'blue',
+            weight: 3
+          }
+        }).addTo(map);
+      });
+  </script>
+</body>
+</html>
