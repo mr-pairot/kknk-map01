@@ -34,32 +34,28 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // สร้าง LayerGroups
-  const layerAL = L.layerGroup().addTo(map);          // เปิดไว้
-  const layerStation = L.layerGroup();                // ปิดไว้
-  const layerStationName = L.layerGroup();            // ปิดไว้
-  const layerDOH = L.layerGroup();                    // ปิดไว้
+  // สร้าง LayerGroups และเพิ่ม layerAL ลง map เปิด default
+  const layerAL = L.layerGroup().addTo(map);       // เปิดแสดง
+  const layerStation = L.layerGroup();             // ปิด default
+  const layerStationName = L.layerGroup();         // ปิด default
+  const layerDOH = L.layerGroup();                  // ปิด default
 
-  // โหลด AL Track
+  // โหลด AL Track KML
   omnivore.kml('AL_Track_KKNK.kml')
     .on('ready', function () {
-      this.eachLayer(layer => {
-        layer.setStyle({ color: "red", weight: 1 });
-      });
+      this.eachLayer(l => l.setStyle({ color: "red", weight: 3 }));
       this.addTo(layerAL);
       map.fitBounds(this.getBounds());
     });
 
-  // โหลด Station.kml
+  // โหลด Station KML
   omnivore.kml('Station.kml')
     .on('ready', function () {
-      this.eachLayer(layer => {
-        layer.setStyle({ color: "gray", weight: 2 });
-      });
+      this.eachLayer(l => l.setStyle({ color: "gray", weight: 2 }));
       this.addTo(layerStation);
     });
 
-  // โหลด Station_Name.kml พร้อม train icon และ tooltip
+  // โหลด Station Name KML + ไอคอนรถไฟ + tooltip
   const trainIcon = L.AwesomeMarkers.icon({
     icon: 'train',
     markerColor: 'blue',
@@ -82,21 +78,20 @@
   fetch('DOH_Show_KM.json')
     .then(res => res.json())
     .then(data => {
-      const geoLayer = L.geoJSON(data, {
-        style: { color: "purple", weight: 2 }
-      });
+      const geoLayer = L.geoJSON(data, { style: { color: "purple", weight: 2 } });
       geoLayer.addTo(layerDOH);
     });
 
-  // เพิ่ม Layer Control
+  // สร้าง Layer Control
   const overlays = {
-    "AL Track KKNK (Red)": layerAL,
+    "AL Track (Red)": layerAL,
     "Station (Gray)": layerStation,
     "Station Name (Train Icon)": layerStationName,
     "DOH KM (Purple)": layerDOH
   };
 
   L.control.layers({ "OpenStreetMap": baseMap }, overlays, { collapsed: false }).addTo(map);
+
 </script>
 </body>
 </html>
