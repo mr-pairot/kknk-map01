@@ -1,136 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>KKNK Map with Layer Control</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <title>KKNK Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Omnivore for KML -->
+  <!-- Omnivore -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
   <!-- AwesomeMarkers -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
 
   <!-- FontAwesome -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
-    #map {
-      height: 100vh;
-      width: 100vw;
-    }
+    #map { height: 100vh; width: 100vw; }
   </style>
 </head>
 <body>
-  <div id="map"></div>
+<div id="map"></div>
 
-  <script>
-    const map = L.map("map").setView([16.5, 102.5], 8);
+<script>
+  const map = L.map('map').setView([16.5, 102.5], 8);
 
-    // Base map
-    const baseMap = L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 18,
-        attribution: "&copy; OpenStreetMap contributors",
-      }
-    ).addTo(map);
+  const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    // Helper function to load KML as Promise
-    function loadKML(url, styleFunc) {
-      return new Promise((resolve) => {
-        const group = L.layerGroup();
-        omnivore
-          .kml(url)
-          .on("ready", function () {
-            if (styleFunc) {
-              this.eachLayer((layer) => {
-                if (layer.setStyle) layer.setStyle(styleFunc(layer));
-              });
-            }
-            this.addTo(group);
-            resolve(group);
-          });
+  // Layer 1: AL Track
+  const layerAL = omnivore.kml('AL_Track_KKNK.kml')
+    .on('ready', function () {
+      this.eachLayer(layer => {
+        layer.setStyle?.({ color: "red", weight: 3 });
       });
-    }
-
-    // Load GeoJSON as Promise
-    function loadGeoJSON(url, styleFunc) {
-      return fetch(url)
-        .then((res) => res.json())
-        .then((data) => {
-          return L.geoJSON(data, {
-            style: styleFunc,
-          });
-        });
-    }
-
-    // Train icon
-    const trainIcon = L.AwesomeMarkers.icon({
-      icon: "train",
-      markerColor: "blue",
-      prefix: "fa",
+      map.fitBounds(this.getBounds());
     });
 
-    // Load Station_Name.kml with custom markers + labels
-    function loadStationName(url) {
-      return new Promise((resolve) => {
-        const group = L.layerGroup();
-        omnivore.kml(url).on("ready", function () {
-          this.eachLayer((layer) => {
-            const name = layer.feature?.properties?.name;
-            if (name) {
-              const marker = L.marker(layer.getLatLng(), { icon: trainIcon }).bindTooltip(name, {
-                permanent: true,
-                direction: "top",
-                offset: [0, -10],
-              });
-              marker.addTo(group);
-            }
-          });
-          resolve(group);
-        });
+  // Layer 2: Station
+  const layerStation = omnivore.kml('Station.kml')
+    .on('ready', function () {
+      this.eachLayer(layer => {
+        layer.setStyle?.({ color: "gray", weight: 2 });
       });
-    }
-
-    // Load all layers
-    Promise.all([
-      loadKML("AL_Track_KKNK.kml", () => ({ color: "red", weight: 2 })),
-      loadKML("Station.kml", () => ({ color: "gray", weight: 2 })),
-      loadStationName("Station_Name.kml"),
-      loadGeoJSON("DOH_Show_KM.json", { color: "purple", weight: 2 }),
-    ]).then(([layerALTrack, layerStation, layerStationName, layerDOH]) => {
-      // Add default layer(s)
-      layerALTrack.addTo(map);
-
-      // Add Layer Control now that all layers are ready
-      const baseLayers = {
-        "OpenStreetMap": baseMap,
-      };
-
-      const overlays = {
-        "AL Track KKNK (Red)": layerALTrack,
-        "Station (Gray)": layerStation,
-        "Station Name (Train Icon)": layerStationName,
-        "DOH KM (Purple)": layerDOH,
-      };
-
-      L.control.layers(baseLayers, overlays, { collapsed: false }).addTo(map);
     });
-  </script>
+
+  // Layer 3: Station Name
+  const trainIcon = L.AwesomeMarkers.icon({
+    icon: "train", markerColor: "blue", prefix: "fa"
+  });
+  const layerStationName = L.layerGroup();
+  omnivore.kml("Station_Name.kml")
+    .on("ready", function () {
+      this.eachLayer(layer => {
+        const name = layer.feature?.properties?.name;
+        if (name) {
+          const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
+            .bindTooltip(name, { permanent: true, direction: "top", offset: [0, -10] });
+          marker.addTo(layerStationName);
+        }
+      });
+    });
+
+  // Layer 4: DOH
+  const layerDOH = L.layerGroup();
+  fetch("DOH_Show_KM.json")
+    .then(res => res.json())
+    .then(data => {
+      const geoLayer = L.geoJSON(data, {
+        style: { color: "purple", weight: 2 }
+      });
+      geoLayer.addTo(layerDOH);
+    });
+
+  // Add all to Layer Control
+  const overlays = {
+    "AL Track KKNK (Red)": layerAL,
+    "Station (Gray)": layerStation,
+    "Station Name (Train Icon)": layerStationName,
+    "DOH KM (Purple)": layerDOH
+  };
+
+  const baseLayers = {
+    "OpenStreetMap": baseMap
+  };
+
+  L.control.layers(baseLayers, overlays, { collapsed: false }).addTo(map);
+</script>
 </body>
 </html>
