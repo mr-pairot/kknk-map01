@@ -1,27 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Leaflet Map (KML + GeoJSON + Icons)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet CSS and JS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Omnivore (for KML) -->
+  <!-- Omnivore for KML -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  <!-- AwesomeMarkers -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
+  <!-- Leaflet Awesome Markers CSS & JS -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css"
+  />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- FontAwesome 4.7.0 for compatibility -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+  />
 
   <style>
-    html, body, #map { height: 100%; margin: 0; padding: 0; }
-    
+    html,
+    body,
+    #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
     /* Loading indicator */
     .loading {
       position: absolute;
@@ -31,42 +46,56 @@
       background: rgba(255, 255, 255, 0.9);
       padding: 10px 20px;
       border-radius: 5px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       z-index: 1000;
       display: none;
-    }
-    
-    /* Custom tooltip styles */
-    .leaflet-tooltip {
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 5px 8px;
-      font-size: 12px;
       font-weight: bold;
+      font-size: 16px;
+      color: #333;
     }
-    
+
+    /* Custom tooltip style for station names */
+    .station-tooltip {
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+
     /* Legend */
     .legend {
       background: white;
       padding: 10px;
       border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       line-height: 18px;
       font-size: 14px;
+      color: #333;
     }
-    
+
     .legend-item {
-      margin: 3px 0;
+      margin: 4px 0;
+      display: flex;
+      align-items: center;
     }
-    
+
     .legend-color {
       width: 20px;
-      height: 3px;
+      height: 4px;
       display: inline-block;
       margin-right: 8px;
       vertical-align: middle;
+      border-radius: 2px;
+    }
+
+    .legend-icon {
+      margin-right: 8px;
+      font-size: 16px;
+      line-height: 1;
     }
   </style>
 </head>
@@ -77,302 +106,246 @@
   </div>
 
   <script>
-    const map = L.map('map').setView([16.5, 102.5], 8);
+    // Initialize map
+    const map = L.map("map").setView([16.5, 102.5], 8);
 
-    // Loading indicator functions
+    // Show/hide loading indicator
     function showLoading() {
-      document.getElementById('loading').style.display = 'block';
+      document.getElementById("loading").style.display = "block";
     }
-    
     function hideLoading() {
-      document.getElementById('loading').style.display = 'none';
+      document.getElementById("loading").style.display = "none";
     }
 
-    // Base map
-    const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    // Add base map layer
+    const baseMap = L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 18,
+        attribution: "&copy; OpenStreetMap contributors",
+      }
+    ).addTo(map);
 
-    // Initialize all layer groups
+    // Layer groups
     const layerALTrack = L.layerGroup();
-    const layerStation = L.layerGroup();
+    const layerStationLayout = L.layerGroup(); // renamed from layerStation
     const layerStationName = L.layerGroup();
 
-    // State tracking
+    // Flags to prevent reloading
     let isALTrackLoaded = false;
-    let isStationLoaded = false;
+    let isStationLayoutLoaded = false;
     let isStationNameLoaded = false;
 
-    // 1. AL Track (red)
+    // 1. Load AL Track (red line)
     function loadALTrack() {
-      if (!isALTrackLoaded) {
-        showLoading();
-        omnivore.kml("AL_Track_KKNK.kml")
-          .on('ready', function () {
-            this.eachLayer(layer => {
-              if (layer.setStyle) {
-                layer.setStyle({ color: "red", weight: 3 });
-              }
-            });
-            
-            this.eachLayer(layer => {
-              layerALTrack.addLayer(layer);
-            });
-            
-            if (layerALTrack.getLayers().length > 0) {
-              map.fitBounds(layerALTrack.getBounds());
+      if (isALTrackLoaded) return;
+      showLoading();
+      omnivore
+        .kml("AL_Track_KKNK.kml")
+        .on("ready", function () {
+          this.eachLayer((layer) => {
+            if (layer.setStyle) {
+              layer.setStyle({ color: "red", weight: 3 });
             }
-            
-            isALTrackLoaded = true;
-            hideLoading();
-          })
-          .on('error', function(err) {
-            console.error('Error loading AL Track KML:', err);
-            hideLoading();
-            alert('Error loading AL Track data');
+            layerALTrack.addLayer(layer);
           });
-      }
-    }
-
-    // 2. Station (gray)
-    function loadStation() {
-      if (!isStationLoaded) {
-        showLoading();
-        omnivore.kml("Station.kml")
-          .on('ready', function () {
-            this.eachLayer(layer => {
-              if (layer.setStyle) {
-                layer.setStyle({ color: "gray", weight: 2 });
-              }
-              layerStation.addLayer(layer);
-            });
-            isStationLoaded = true;
-            hideLoading();
-          })
-          .on('error', function(err) {
-            console.error('Error loading Station KML:', err);
-            hideLoading();
-            alert('Error loading Station data');
-          });
-      }
-    }
-
-    // 3. Station Name (Train icons + permanent labels)
-    function loadStationName() {
-      if (!isStationNameLoaded) {
-        showLoading();
-        console.log('Loading Station Name...');
-        
-        // Create different icons for different types
-        const stationIcon = L.AwesomeMarkers.icon({
-          icon: 'train',
-          markerColor: 'green',
-          prefix: 'fa'
-        });
-
-        const stopIcon = L.AwesomeMarkers.icon({
-          icon: 'pause',
-          markerColor: 'orange',
-          prefix: 'fa'
-        });
-
-        const originIcon = L.AwesomeMarkers.icon({
-          icon: 'home',
-          markerColor: 'gray',
-          prefix: 'fa'
-        });
-
-        const timeoutId = setTimeout(() => {
+          if (layerALTrack.getLayers().length) {
+            map.fitBounds(layerALTrack.getBounds());
+          }
+          isALTrackLoaded = true;
           hideLoading();
-          console.error('Station Name loading timeout');
-          alert('Loading Station Name data timeout. Please check if Station_Name.kml file exists and is accessible.');
-          isStationNameLoaded = false;
-        }, 15000);
+        })
+        .on("error", (err) => {
+          console.error("Error loading AL Track KML:", err);
+          alert("Error loading AL Track data");
+          hideLoading();
+        });
+    }
 
-        const kmlLayer = omnivore.kml("Station_Name.kml");
-        
-        kmlLayer.on('ready', function () {
+    // 2. Load Station Layout (gray)
+    function loadStationLayout() {
+      if (isStationLayoutLoaded) return;
+      showLoading();
+      omnivore
+        .kml("Station.kml")
+        .on("ready", function () {
+          this.eachLayer((layer) => {
+            if (layer.setStyle) {
+              layer.setStyle({ color: "gray", weight: 2 });
+            }
+            layerStationLayout.addLayer(layer);
+          });
+          isStationLayoutLoaded = true;
+          hideLoading();
+        })
+        .on("error", (err) => {
+          console.error("Error loading Station KML:", err);
+          alert("Error loading Station Layout data");
+          hideLoading();
+        });
+    }
+
+    // 3. Load Station Name (train icons + permanent labels)
+    function loadStationName() {
+      if (isStationNameLoaded) return;
+      showLoading();
+
+      // Define icons
+      const stationIcon = L.AwesomeMarkers.icon({
+        icon: "train",
+        markerColor: "green",
+        prefix: "fa",
+      });
+      const stopIcon = L.AwesomeMarkers.icon({
+        icon: "pause",
+        markerColor: "orange",
+        prefix: "fa",
+      });
+      const originIcon = L.AwesomeMarkers.icon({
+        icon: "home",
+        markerColor: "gray",
+        prefix: "fa",
+      });
+
+      // Timeout in case KML fails to load
+      const timeoutId = setTimeout(() => {
+        hideLoading();
+        alert(
+          "Loading Station Name data timeout. Please check if Station_Name.kml is accessible."
+        );
+        isStationNameLoaded = false;
+      }, 15000);
+
+      const kmlLayer = omnivore.kml("Station_Name.kml");
+
+      kmlLayer
+        .on("ready", function () {
           clearTimeout(timeoutId);
-          console.log('Station Name KML loaded, processing layers...');
-          console.log('Total layers found:', this.getLayers().length);
-          
+
           let markerCount = 0;
-          let processedCount = 0;
-          
-          this.eachLayer(layer => {
-            processedCount++;
+          this.eachLayer((layer) => {
             try {
-              console.log(`Processing layer ${processedCount}:`, layer);
-              
-              // Get the name from different possible sources
-              let label = null;
-              if (layer.feature && layer.feature.properties) {
-                // Check both 'name' and 'n' (our shortened version)
-                label = layer.feature.properties.name || 
-                       layer.feature.properties.n ||
-                       layer.feature.properties.Name || 
-                       layer.feature.properties.NAME ||
-                       layer.feature.properties.description ||
-                       layer.feature.properties.Description;
-                       
-                console.log(`Layer ${processedCount} properties:`, layer.feature.properties);
-              }
-              
-              if (!label && layer.options && layer.options.title) {
-                label = layer.options.title;
-              }
-              
-              if (!label && layer.getPopup && layer.getPopup()) {
-                label = layer.getPopup().getContent();
-              }
-              
-              if (!label && layer.getLatLng && layer.getLatLng()) {
+              // Extract label from properties or options
+              let label =
+                (layer.feature &&
+                  (layer.feature.properties.name ||
+                    layer.feature.properties.n ||
+                    layer.feature.properties.Name ||
+                    layer.feature.properties.NAME ||
+                    layer.feature.properties.description ||
+                    layer.feature.properties.Description)) ||
+                (layer.options && layer.options.title) ||
+                (layer.getPopup && layer.getPopup() && layer.getPopup().getContent()) ||
+                null;
+
+              // If label is null, generate default label from latlng
+              if (!label && layer.getLatLng) {
                 const latlng = layer.getLatLng();
-                label = `Station (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
+                if (latlng) {
+                  label = `Station (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
+                }
               }
-              
-              if (layer.getLatLng && layer.getLatLng() && label) {
-                // Choose icon based on name content
-                let icon = stationIcon; // default
-                if (label.includes('ที่หยุดรถ')) {
+
+              if (layer.getLatLng && label) {
+                // Decide icon by label content
+                let icon = stationIcon;
+                if (label.includes("ที่หยุดรถ")) {
                   icon = stopIcon;
-                } else if (label.includes('0 สถานี')) {
+                } else if (label.includes("0 สถานี")) {
                   icon = originIcon;
                 }
-                
-                const marker = L.marker(layer.getLatLng(), { icon: icon })
-                  .bindTooltip(label, { 
-                    permanent: true, 
-                    direction: 'top', 
+
+                // Create marker with permanent tooltip
+                const marker = L.marker(layer.getLatLng(), { icon }).bindTooltip(
+                  label,
+                  {
+                    permanent: true,
+                    direction: "top",
                     offset: [0, -10],
-                    className: 'station-tooltip'
-                  });
+                    className: "station-tooltip",
+                  }
+                );
                 layerStationName.addLayer(marker);
                 markerCount++;
-                console.log(`Created marker ${markerCount}: ${label}`);
-              } else {
-                console.warn(`Layer ${processedCount} skipped - no valid data:`, {
-                  hasLatLng: !!(layer.getLatLng && layer.getLatLng()),
-                  label: label,
-                  layer: layer
-                });
               }
-            } catch (error) {
-              console.error(`Error processing layer ${processedCount}:`, error, layer);
+            } catch (e) {
+              console.error("Error processing station name layer:", e, layer);
             }
           });
-          
-          console.log(`Station Name processing complete: ${markerCount} markers created from ${processedCount} layers`);
-          
+
           if (markerCount === 0) {
-            console.warn('No markers were created. This might indicate a parsing issue.');
-            alert('Warning: No station markers were created. The KML file might have a different structure than expected.');
+            alert(
+              "Warning: No station markers were created. Check the KML structure."
+            );
           }
-          
+
           isStationNameLoaded = true;
           hideLoading();
-        });
-        
-        kmlLayer.on('error', function(err) {
+        })
+        .on("error", (err) => {
           clearTimeout(timeoutId);
-          console.error('Error loading Station Name KML:', err);
+          console.error("Error loading Station Name KML:", err);
+          alert("Error loading Station Name data");
           hideLoading();
-          alert('Error loading Station Name data: ' + (err.message || 'Unknown error'));
           isStationNameLoaded = false;
         });
-        
-        kmlLayer.on('addlayer', function(e) {
-          console.log('Layer added to KML:', e.layer);
-        });
-      }
     }
 
-    // Layer control
+    // Layer control overlays
     const overlays = {
       "AL Track KKNK (red)": layerALTrack,
-      "Station (gray)": layerStation,
-      "Station Name (train icon)": layerStationName
+      "Station Layout (gray)": layerStationLayout,
+      "Station Name (train icon)": layerStationName,
     };
 
-    const layerControl = L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+    const layerControl = L.control.layers(null, overlays, {
+      collapsed: false,
+    }).addTo(map);
 
-    // Handle layer add/remove events
-    map.on("overlayadd", function(e) {
-      switch(e.name) {
+    // Handle overlay add event to load data on demand
+    map.on("overlayadd", (e) => {
+      switch (e.name) {
         case "AL Track KKNK (red)":
           loadALTrack();
+          layerALTrack.addTo(map);
           break;
-        case "Station (gray)":
-          loadStation();
+        case "Station Layout (gray)":
+          loadStationLayout();
+          layerStationLayout.addTo(map);
           break;
         case "Station Name (train icon)":
           loadStationName();
+          layerStationName.addTo(map);
           break;
       }
     });
 
-    map.on("overlayremove", function(e) {
-      // Layers are automatically removed from map by Leaflet
-    });
-
-    // Add legend
-    const legend = L.control({position: 'bottomright'});
-    legend.onAdd = function (map) {
-      const div = L.DomUtil.create('div', 'legend');
-      div.innerHTML = `
-        <div class="legend-item">
-          <span class="legend-color" style="background-color: red;"></span>
-          AL Track KKNK
-        </div>
-        <div class="legend-item">
-          <span class="legend-color" style="background-color: gray;"></span>
-          Station
-        </div>
-        <div class="legend-item">
-          <i class="fa fa-train" style="color: green; margin-right: 8px;"></i>
-          Station (สถานี)
-        </div>
-        <div class="legend-item">
-          <i class="fa fa-pause" style="color: orange; margin-right: 8px;"></i>
-          Stop (ที่หยุดรถ)
-        </div>
-        <div class="legend-item">
-          <i class="fa fa-home" style="color: gray; margin-right: 8px;"></i>
-          Origin (ต้นทาง)
-        </div>
-      `;
-      return div;
-    };
-    legend.addTo(map);
-
-    // Initialize with AL Track loaded and displayed
+    // Initialize map with AL Track loaded and visible
     loadALTrack();
     layerALTrack.addTo(map);
 
-    // Add scale control
-    L.control.scale({
-      metric: true,
-      imperial: false,
-      position: 'bottomleft'
-    }).addTo(map);
+    // Add scale control (metric only)
+    L.control
+      .scale({
+        metric: true,
+        imperial: false,
+        position: "bottomleft",
+      })
+      .addTo(map);
 
-    // Add zoom control to top right
+    // Move zoom control to top right
     map.removeControl(map.zoomControl);
-    L.control.zoom({
-      position: 'topright'
-    }).addTo(map);
+    L.control.zoom({ position: "topright" }).addTo(map);
 
-    // Error handling
-    window.addEventListener('error', function(e) {
-      console.error('Global error:', e.error);
+    // Global error logging
+    window.addEventListener("error", (e) => {
+      console.error("Global error:", e.error);
     });
 
-    // Handle map click for debugging
-    map.on('click', function(e) {
-      console.log('Clicked at:', e.latlng);
+    // Debug: log latlng on map click
+    map.on("click", (e) => {
+      console.log("Clicked at:", e.latlng);
     });
-
   </script>
 </body>
 </html>
