@@ -98,14 +98,11 @@
     const layerALTrack = L.layerGroup();
     const layerStation = L.layerGroup();
     const layerStationName = L.layerGroup();
-    const layerDOH = L.layerGroup();
 
     // State tracking
     let isALTrackLoaded = false;
     let isStationLoaded = false;
     let isStationNameLoaded = false;
-    let isDOHLoaded = false;
-    let isDOHLoading = false;
 
     // 1. AL Track (red)
     function loadALTrack() {
@@ -200,47 +197,13 @@
       }
     }
 
-    // 4. DOH layer (purple), lazy load
-    function loadDOHLayer() {
-      if (!isDOHLoaded && !isDOHLoading) {
-        isDOHLoading = true;
-        showLoading();
-        
-        fetch("DOH_Show_KM.json")
-          .then(res => {
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-          })
-          .then(data => {
-            const geoJsonLayer = L.geoJSON(data, { 
-              style: { 
-                color: 'purple', 
-                weight: 2,
-                opacity: 0.7,
-                fillOpacity: 0.3
-              }
-            });
-            
-            layerDOH.addLayer(geoJsonLayer);
-            isDOHLoaded = true;
-            isDOHLoading = false;
-            hideLoading();
-          })
-          .catch(err => {
-            console.error('Error loading DOH data:', err);
-            isDOHLoading = false;
-            hideLoading();
-            alert('Error loading DOH data. Please check if DOH_Show_KM.json exists.');
-          });
-      }
-    }
+    // 4. DOH layer removed as requested
 
     // Layer control with custom overlay control
     const overlays = {
       "AL Track KKNK (red)": layerALTrack,
       "Station (gray)": layerStation,
-      "Station Name (train icon)": layerStationName,
-      "DOH KM (purple)": layerDOH
+      "Station Name (train icon)": layerStationName
     };
 
     // Add layer control
@@ -257,9 +220,6 @@
           break;
         case "Station Name (train icon)":
           loadStationName();
-          break;
-        case "DOH KM (purple)":
-          loadDOHLayer();
           break;
       }
     });
@@ -285,10 +245,6 @@
         <div class="legend-item">
           <i class="fa fa-train" style="color: blue; margin-right: 8px;"></i>
           Station Name
-        </div>
-        <div class="legend-item">
-          <span class="legend-color" style="background-color: purple;"></span>
-          DOH KM
         </div>
       `;
       return div;
