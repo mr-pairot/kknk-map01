@@ -1,70 +1,34 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Leaflet: Multiple Layers from Local Files</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <style>
-    #map { height: 100vh; width: 100vw; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
+<head><meta charset="utf-8"><title>Leaflet Layers Local</title><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></head>
+<body><div id="map" style="height:100vh"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+<script>
+  const map = L.map('map').setView([16.5,102.5],8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OSM'}).addTo(map);
 
-  <!-- Leaflet Core -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Omnivore for KML -->
-  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+  const layerALTrack = omnivore.kml("AL_Track_KKNK.kml");
+  const layerStation = omnivore.kml("Station.kml");
+  const layerDOH = L.layerGroup();
 
-  <script>
-    // สร้างแผนที่กลางประเทศ
-    const map = L.map('map').setView([16.5, 102.5], 8);
-
-    // พื้นหลังแผนที่
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // กลุ่มเลเยอร์
-    const layerALTrack = omnivore.kml("AL_Track_KKNK.kml");
-    const layerStation = omnivore.kml("Station.kml");
-    const layerDOH = L.layerGroup(); // จะเติมด้วย geoJSON
-
-    // โหลด GeoJSON จากไฟล์ในโฟลเดอร์เดียวกัน
-    fetch("DOH_Show_KM.json")
-      .then(res => res.json())
-      .then(data => {
-        const geoLayer = L.geoJSON(data, {
-          style: {
-            color: 'blue',
-            weight: 3
-          }
-        });
-        geoLayer.addTo(layerDOH);
-      });
-
-    // เพิ่ม layer ทั้งหมด
-    layerALTrack.addTo(map);
-    layerStation.addTo(map);
-    layerDOH.addTo(map);
-
-    // เปิด layer control
-    const overlayMaps = {
-      "AL Track KKNK (KML)": layerALTrack,
-      "Station (KML)": layerStation,
-      "DOH KM (GeoJSON)": layerDOH
-    };
-    L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
-
-    // Fit map to AL track once ready
-    layerALTrack.on('ready', function () {
-      map.fitBounds(layerALTrack.getBounds());
+  fetch("DOH_Show_KM.json")
+    .then(r=>r.json())
+    .then(d=>{
+      L.geoJSON(d,{style:{color:'blue',weight:3}}).addTo(layerDOH);
     });
-  </script>
+
+  layerALTrack.addTo(map);
+  layerStation.addTo(map);
+  layerDOH.addTo(map);
+
+  L.control.layers(null,{
+    "AL Track KKNK": layerALTrack,
+    "Station": layerStation,
+    "DOH KM": layerDOH
+  },{collapsed:false}).addTo(map);
+
+  layerALTrack.on('ready',()=>map.fitBounds(layerALTrack.getBounds()));
+</script>
 </body>
 </html>
