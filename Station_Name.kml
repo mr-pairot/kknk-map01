@@ -2,19 +2,7 @@
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <name>STATION</name>
-    <Style id="icon-1644-795548-labelson-nodesc">
-      <IconStyle>
-        <color>ff485579</color>
-        <scale>1</scale>
-        <Icon>
-          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
-        </Icon>
-      </IconStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
-    </Style>
-    <Style id="icon-1716-0F9D58-labelson-nodesc">
+    <Style id="station">
       <IconStyle>
         <color>ff589d0f</color>
         <scale>1</scale>
@@ -22,11 +10,17 @@
           <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
         </Icon>
       </IconStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
     </Style>
-    <Style id="icon-1716-757575-labelson-nodesc">
+    <Style id="stop">
+      <IconStyle>
+        <color>ff485579</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Style id="origin">
       <IconStyle>
         <color>ff757575</color>
         <scale>1</scale>
@@ -34,180 +28,159 @@
           <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
         </Icon>
       </IconStyle>
-      <BalloonStyle>
-        <text><![CDATA[<h3>$[name]</h3>]]></text>
-      </BalloonStyle>
     </Style>
-    <Placemark>
-      <name>1 สถานี สำราญ</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.843752,16.517213,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>ที่หยุดรถ ห้วยไห</name>
-      <styleUrl>#icon-1644-795548-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.834024,16.573141,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>2 สถานี โนนพยอม</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.818418,16.642759,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>ที่หยุดรถ บ้านวังชัย</name>
-      <styleUrl>#icon-1644-795548-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.845934,16.678763,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>3 สถานี น้ำพอง</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.860966,16.709379,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>ที่หยุดรถ ห้วยเสียว</name>
-      <styleUrl>#icon-1644-795548-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.870575,16.756304,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>5 สถานี เขาสวนกวาง</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.876026,16.850226,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>6 สถานี โนนสะอาด</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.897214,16.967127,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>7 สถานี ห้วยเกิ้ง</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.927598,17.042111,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>8 สถานี กุมภวาปี</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.948298,17.122026,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>9 สถานี ห้วยสามพาด</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.937925,17.208998,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>10 สถานี หนองตะไก้</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.894251,17.266814,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>ที่หยุดรถ คำกลิ้ง</name>
-      <styleUrl>#icon-1644-795548-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.831533,17.350472,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>11 สถานี หนองขอนกว้าง</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.813019,17.37503,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>12 สถานี อุดรธานี</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.805266,17.403959,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>13 สถานี นาพู่</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.773122,17.619713,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>14 สถานี นาทา</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.748734,17.841828,0
-        </coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>15 สถานี หนองคาย</name>
-      <styleUrl>#icon-1716-0F9D58-labelson-nodesc</styleUrl>
-      <Point>
-        <coordinates>
-          102.731306,17.864335,0
-        </coordinates>
-      </Point>
-    </Placemark>
+    
     <Placemark>
       <name>0 สถานี ขอนแก่น</name>
-      <styleUrl>#icon-1716-757575-labelson-nodesc</styleUrl>
+      <styleUrl>#origin</styleUrl>
       <Point>
-        <coordinates>
-          102.825505,16.425921,0
-        </coordinates>
+        <coordinates>102.825505,16.425921,0</coordinates>
       </Point>
     </Placemark>
+    
+    <Placemark>
+      <name>1 สถานี สำราญ</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.843752,16.517213,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>ที่หยุดรถ ห้วยไห</name>
+      <styleUrl>#stop</styleUrl>
+      <Point>
+        <coordinates>102.834024,16.573141,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>2 สถานี โนนพยอม</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.818418,16.642759,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>ที่หยุดรถ บ้านวังชัย</name>
+      <styleUrl>#stop</styleUrl>
+      <Point>
+        <coordinates>102.845934,16.678763,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>3 สถานี น้ำพอง</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.860966,16.709379,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>ที่หยุดรถ ห้วยเสียว</name>
+      <styleUrl>#stop</styleUrl>
+      <Point>
+        <coordinates>102.870575,16.756304,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>5 สถานี เขาสวนกวาง</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.876026,16.850226,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>6 สถานี โนนสะอาด</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.897214,16.967127,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>7 สถานี ห้วยเกิ้ง</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.927598,17.042111,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>8 สถานี กุมภวาปี</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.948298,17.122026,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>9 สถานี ห้วยสามพาด</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.937925,17.208998,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>10 สถานี หนองตะไก้</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.894251,17.266814,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>ที่หยุดรถ คำกลิ้ง</name>
+      <styleUrl>#stop</styleUrl>
+      <Point>
+        <coordinates>102.831533,17.350472,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>11 สถานี หนองขอนกว้าง</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.813019,17.37503,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>12 สถานี อุดรธานี</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.805266,17.403959,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>13 สถานี นาพู่</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.773122,17.619713,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>14 สถานี นาทา</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.748734,17.841828,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>15 สถานี หนองคาย</name>
+      <styleUrl>#station</styleUrl>
+      <Point>
+        <coordinates>102.731306,17.864335,0</coordinates>
+      </Point>
+    </Placemark>
+    
   </Document>
 </kml>
