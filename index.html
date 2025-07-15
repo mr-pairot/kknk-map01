@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Map for KKNK (Test version)</title>
+  <title>Leaflet: Multiple Layers from Local Files</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link
     rel="stylesheet"
@@ -21,7 +21,7 @@
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
   <script>
-    // สร้างแผนที่
+    // สร้างแผนที่กลางประเทศ
     const map = L.map('map').setView([16.5, 102.5], 8);
 
     // พื้นหลังแผนที่
@@ -30,14 +30,13 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // สร้างกลุ่ม Layer เปล่าไว้ก่อน
-    const layerALTrack = omnivore.kml("https://drive.google.com/uc?export=download&id=1I0K0SKSBEVV6eW56-WqgBl02E1nkSygC");
-    const layerStation = omnivore.kml("https://drive.google.com/uc?export=download&id=1YQtb8TxnPOXr7aR9-TuJ4PVksYja0yoG");
+    // กลุ่มเลเยอร์
+    const layerALTrack = omnivore.kml("AL_Track_KKNK.kml");
+    const layerStation = omnivore.kml("Station.kml");
+    const layerDOH = L.layerGroup(); // จะเติมด้วย geoJSON
 
-    const layerDOH = L.layerGroup(); // สำหรับ JSON
-
-    // โหลด GeoJSON แล้วใส่ใน layerDOH
-    fetch("https://drive.google.com/uc?export=download&id=1z-b21It3k0a_LkZDayyt2pCZhNQlJaWJ")
+    // โหลด GeoJSON จากไฟล์ในโฟลเดอร์เดียวกัน
+    fetch("DOH_Show_KM.json")
       .then(res => res.json())
       .then(data => {
         const geoLayer = L.geoJSON(data, {
@@ -49,22 +48,20 @@
         geoLayer.addTo(layerDOH);
       });
 
-    // เพิ่มทุก Layer เข้าแผนที่ (หรือเลือกเปิดบางอันไว้ก่อน)
+    // เพิ่ม layer ทั้งหมด
     layerALTrack.addTo(map);
     layerStation.addTo(map);
     layerDOH.addTo(map);
 
-    // รวมเป็นกลุ่ม Layer พร้อมชื่อ
+    // เปิด layer control
     const overlayMaps = {
       "AL Track KKNK (KML)": layerALTrack,
       "Station (KML)": layerStation,
-      "DOH KM (JSON)": layerDOH
+      "DOH KM (GeoJSON)": layerDOH
     };
-
-    // สร้าง Layer Control ด้านขวาบน
     L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 
-    // Auto zoom ตาม AL Track หลังโหลดเสร็จ
+    // Fit map to AL track once ready
     layerALTrack.on('ready', function () {
       map.fitBounds(layerALTrack.getBounds());
     });
