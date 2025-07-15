@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Leaflet Map (KML + GeoJSON + Icons)</title>
+  <title>KKNK Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,9 +12,12 @@
   <!-- Omnivore (for KML) -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  <!-- AwesomeMarkers -->
+  <!-- AwesomeMarkers (train icon) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
+
+  <!-- FontAwesome for train icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
     #map { height: 100vh; width: 100vw; }
@@ -32,9 +35,7 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // ----------- Layers -----------
-
-    // 1. AL Track (red)
+    // --------- Layer 1: AL Track (Red) ---------
     const layerALTrack = omnivore.kml("AL_Track_KKNK.kml")
       .on('ready', function () {
         this.eachLayer(layer => {
@@ -43,7 +44,7 @@
         map.fitBounds(this.getBounds());
       }).addTo(map);
 
-    // 2. Station (gray)
+    // --------- Layer 2: Station (Gray) ---------
     const layerStation = omnivore.kml("Station.kml")
       .on('ready', function () {
         this.eachLayer(layer => {
@@ -51,77 +52,46 @@
         });
       });
 
-    // 3. DOH GeoJSON (purple), lazy load
-    let layerDOH;
-    function loadDOHLayer() {
-      if (!layerDOH) {
-        layerDOH = L.layerGroup();
-        fetch("DOH_Show_KM.json")
-          .then(res => res.json())
-          .then(data => {
-            const geoLayer = L.geoJSON(data, {
-              style: { color: 'purple', weight: 2 }
-            });
-            geoLayer.addTo(layerDOH);
-            layerDOH.addTo(map);
-          });
-      } else {
-        layerDOH.addTo(map);
-      }
-    }
-    function removeDOHLayer() {
-      if (layerDOH) map.removeLayer(layerDOH);
-    }
-
-    // 4. Station Name (Train icons + permanent labels)
+    // --------- Layer 3: Station Name (Train icons + labels) ---------
     const trainIcon = L.AwesomeMarkers.icon({
       icon: 'train',
       markerColor: 'blue',
       prefix: 'fa'
     });
 
-    const layerStationName = omnivore.kml("Station_Name.kml")
+    const layerStationName = L.layerGroup();
+    const stationNameKML = omnivore.kml("Station_Name.kml")
       .on('ready', function () {
         this.eachLayer(layer => {
           if (layer.feature && layer.feature.properties && layer.feature.properties.name) {
             const label = layer.feature.properties.name;
-
             const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
               .bindTooltip(label, { permanent: true, direction: 'top', offset: [0, -10] });
-
             marker.addTo(layerStationName);
           }
-          // Remove default marker if any
-          layer.remove();
         });
       });
 
-    // ---------- Layer control ----------
+    // --------- Layer 4: DOH GeoJSON (Purple) ---------
+    const layerDOH = L.layerGroup();
+    fetch("DOH_Show_KM.json")
+      .then(res => res.json())
+      .then(data => {
+        const geoLayer = L.geoJSON(data, {
+          style: { color: 'purple', weight: 2 }
+        });
+        geoLayer.addTo(layerDOH);
+      });
+
+    // --------- Layer Control (รวมทั้งหมด) ---------
     const overlays = {
-      "AL Track KKNK": layerALTrack,
-      "Station (KML)": layerStation,
-      "Station Name (train icon)": layerStationName
+      "AL Track KKNK (Red)": layerALTrack,
+      "Station (Gray)": layerStation,
+      "Station Name (Train Icon)": layerStationName,
+      "DOH KM (Purple)": layerDOH
     };
 
     L.control.layers(null, overlays, { collapsed: false }).addTo(map);
-
-    // Handle DOH layer lazy loading
-    map.on("overlayadd", function(e) {
-      if (e.name === "DOH KM (GeoJSON)") loadDOHLayer();
-    });
-    map.on("overlayremove", function(e) {
-      if (e.name === "DOH KM (GeoJSON)") removeDOHLayer();
-    });
-
-    // Add DOH option (not added initially)
-    const dohCheckbox = L.DomUtil.create('div', '');
-    dohCheckbox.innerHTML = '<label><input type="checkbox" id="doh-layer"> DOH KM (GeoJSON)</label>';
-    L.control({ position: 'topright' }).onAdd = function () { return dohCheckbox };
-    map.addControl(this);
-
-    document.getElementById('doh-layer').addEventListener('change', function () {
-      if (this.checked) loadDOHLayer(); else removeDOHLayer();
-    });
   </script>
 </body>
 </html>
