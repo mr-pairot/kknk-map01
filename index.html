@@ -129,7 +129,7 @@
 
     // Layer groups
     const layerALTrack = L.layerGroup();
-    const layerStationLayout = L.layerGroup(); // renamed from layerStation
+    const layerStationLayout = L.layerGroup();
     const layerStationName = L.layerGroup();
 
     // Flags to prevent reloading
@@ -191,24 +191,30 @@
       if (isStationNameLoaded) return;
       showLoading();
 
-      // Define icons
-      const stationIcon = L.AwesomeMarkers.icon({
-        icon: "train",
-        markerColor: "green",
-        prefix: "fa",
-      });
-      const stopIcon = L.AwesomeMarkers.icon({
-        icon: "pause",
-        markerColor: "orange",
-        prefix: "fa",
-      });
-      const originIcon = L.AwesomeMarkers.icon({
-        icon: "home",
-        markerColor: "gray",
-        prefix: "fa",
-      });
+      // Define icons for different styles
+      const icons = {
+        station: L.AwesomeMarkers.icon({
+          icon: "train",
+          markerColor: "green",
+          prefix: "fa",
+        }),
+        stop: L.AwesomeMarkers.icon({
+          icon: "pause",
+          markerColor: "orange",
+          prefix: "fa",
+        }),
+        origin: L.AwesomeMarkers.icon({
+          icon: "home",
+          markerColor: "gray",
+          prefix: "fa",
+        }),
+        default: L.AwesomeMarkers.icon({
+          icon: "map-marker",
+          markerColor: "blue",
+          prefix: "fa",
+        }),
+      };
 
-      // Timeout in case KML fails to load
       const timeoutId = setTimeout(() => {
         hideLoading();
         alert(
@@ -217,60 +223,46 @@
         isStationNameLoaded = false;
       }, 15000);
 
-      const kmlLayer = omnivore.kml("Station_Name.kml");
-
-      kmlLayer
+      omnivore
+        .kml("Station_Name.kml")
         .on("ready", function () {
           clearTimeout(timeoutId);
 
           let markerCount = 0;
+
           this.eachLayer((layer) => {
             try {
-              // Extract label from properties or options
-              let label =
-                (layer.feature &&
-                  (layer.feature.properties.name ||
-                    layer.feature.properties.n ||
-                    layer.feature.properties.Name ||
-                    layer.feature.properties.NAME ||
-                    layer.feature.properties.description ||
-                    layer.feature.properties.Description)) ||
-                (layer.options && layer.options.title) ||
-                (layer.getPopup && layer.getPopup() && layer.getPopup().getContent()) ||
-                null;
+              if (layer.feature && layer.feature.geometry) {
+                // Get station name from KML
+                const props = layer.feature.properties || {};
+                const label =
+                  props.name || props.Name || layer.feature.id || "No name";
 
-              // If label is null, generate default label from latlng
-              if (!label && layer.getLatLng) {
-                const latlng = layer.getLatLng();
-                if (latlng) {
-                  label = `Station (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
-                }
-              }
+                // Get styleUrl from feature id or properties
+                let styleUrl = layer.feature.id || props.styleUrl || null;
 
-              if (layer.getLatLng && label) {
-                // Decide icon by label content
-                let icon = stationIcon;
-                if (label.includes("ที่หยุดรถ")) {
-                  icon = stopIcon;
-                } else if (label.includes("0 สถานี")) {
-                  icon = originIcon;
+                if (styleUrl && styleUrl.startsWith("#")) {
+                  styleUrl = styleUrl.substring(1);
                 }
 
-                // Create marker with permanent tooltip
-                const marker = L.marker(layer.getLatLng(), { icon }).bindTooltip(
-                  label,
-                  {
-                    permanent: true,
-                    direction: "top",
-                    offset: [0, -10],
-                    className: "station-tooltip",
-                  }
-                );
-                layerStationName.addLayer(marker);
-                markerCount++;
+                const icon = icons[styleUrl] || icons.default;
+
+                if (layer.getLatLng && label) {
+                  const marker = L.marker(layer.getLatLng(), { icon: icon }).bindTooltip(
+                    label,
+                    {
+                      permanent: true,
+                      direction: "top",
+                      offset: [0, -10],
+                      className: "station-tooltip",
+                    }
+                  );
+                  layerStationName.addLayer(marker);
+                  markerCount++;
+                }
               }
-            } catch (e) {
-              console.error("Error processing station name layer:", e, layer);
+            } catch (error) {
+              console.error("Error processing layer:", error, layer);
             }
           });
 
@@ -351,7 +343,7 @@
     };
     legend.addTo(map);
 
-    // Initialize map with AL Track loaded and visible
+    // Initialize map with AL Track loaded and shown
     loadALTrack();
     layerALTrack.addTo(map);
 
@@ -366,16 +358,18 @@
 
     // Move zoom control to top right
     map.removeControl(map.zoomControl);
-    L.control.zoom({ position: "topright" }).addTo(map);
+    L.control.zoom({
+      position: "topright",
+    }).addTo(map);
+
+    // Log clicks for debug
+    map.on("click", (e) => {
+      console.log("Clicked at:", e.latlng);
+    });
 
     // Global error logging
     window.addEventListener("error", (e) => {
       console.error("Global error:", e.error);
-    });
-
-    // Debug: log latlng on map click
-    map.on("click", (e) => {
-      console.log("Clicked at:", e.latlng);
     });
   </script>
 </body>
