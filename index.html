@@ -12,11 +12,11 @@
   <!-- Omnivore (for KML) -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  <!-- AwesomeMarkers (train icon) -->
+  <!-- AwesomeMarkers -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
 
-  <!-- FontAwesome for train icon -->
+  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
@@ -24,74 +24,79 @@
   </style>
 </head>
 <body>
-  <div id="map"></div>
+<div id="map"></div>
 
-  <script>
-    const map = L.map('map').setView([16.5, 102.5], 8);
+<script>
+  const map = L.map('map').setView([16.5, 102.5], 8);
 
-    // Base map
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+  // -------- Base map --------
+  const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    // --------- Layer 1: AL Track (Red) ---------
-    const layerALTrack = omnivore.kml("AL_Track_KKNK.kml")
-      .on('ready', function () {
-        this.eachLayer(layer => {
-          if (layer.setStyle) layer.setStyle({ color: "red", weight: 3 });
-        });
-        map.fitBounds(this.getBounds());
-      }).addTo(map);
+  const baseLayers = {
+    "OpenStreetMap": baseMap
+  };
 
-    // --------- Layer 2: Station (Gray) ---------
-    const layerStation = omnivore.kml("Station.kml")
-      .on('ready', function () {
-        this.eachLayer(layer => {
-          if (layer.setStyle) layer.setStyle({ color: "gray", weight: 2 });
-        });
-      });
+  // -------- AL Track (red) --------
+  const layerALTrack = L.layerGroup();
+  omnivore.kml("AL_Track_KKNK.kml")
+    .on('ready', function () {
+      this.eachLayer(layer => layer.setStyle?.({ color: "red", weight: 3 }));
+      this.addTo(layerALTrack);
+      map.fitBounds(this.getBounds());
+    });
+  layerALTrack.addTo(map); // default ON
 
-    // --------- Layer 3: Station Name (Train icons + labels) ---------
-    const trainIcon = L.AwesomeMarkers.icon({
-      icon: 'train',
-      markerColor: 'blue',
-      prefix: 'fa'
+  // -------- Station (gray) --------
+  const layerStation = L.layerGroup();
+  omnivore.kml("Station.kml")
+    .on('ready', function () {
+      this.eachLayer(layer => layer.setStyle?.({ color: "gray", weight: 2 }));
+      this.addTo(layerStation);
     });
 
-    const layerStationName = L.layerGroup();
-    const stationNameKML = omnivore.kml("Station_Name.kml")
-      .on('ready', function () {
-        this.eachLayer(layer => {
-          if (layer.feature && layer.feature.properties && layer.feature.properties.name) {
-            const label = layer.feature.properties.name;
-            const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
-              .bindTooltip(label, { permanent: true, direction: 'top', offset: [0, -10] });
-            marker.addTo(layerStationName);
-          }
-        });
+  // -------- Station Name (icon+label) --------
+  const trainIcon = L.AwesomeMarkers.icon({
+    icon: 'train',
+    markerColor: 'blue',
+    prefix: 'fa'
+  });
+
+  const layerStationName = L.layerGroup();
+  omnivore.kml("Station_Name.kml")
+    .on('ready', function () {
+      this.eachLayer(layer => {
+        const name = layer.feature?.properties?.name;
+        if (name) {
+          const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
+            .bindTooltip(name, { permanent: true, direction: 'top', offset: [0, -10] });
+          marker.addTo(layerStationName);
+        }
       });
+    });
 
-    // --------- Layer 4: DOH GeoJSON (Purple) ---------
-    const layerDOH = L.layerGroup();
-    fetch("DOH_Show_KM.json")
-      .then(res => res.json())
-      .then(data => {
-        const geoLayer = L.geoJSON(data, {
-          style: { color: 'purple', weight: 2 }
-        });
-        geoLayer.addTo(layerDOH);
+  // -------- DOH GeoJSON (purple) --------
+  const layerDOH = L.layerGroup();
+  fetch("DOH_Show_KM.json")
+    .then(res => res.json())
+    .then(data => {
+      const geoLayer = L.geoJSON(data, {
+        style: { color: 'purple', weight: 2 }
       });
+      geoLayer.addTo(layerDOH);
+    });
 
-    // --------- Layer Control (รวมทั้งหมด) ---------
-    const overlays = {
-      "AL Track KKNK (Red)": layerALTrack,
-      "Station (Gray)": layerStation,
-      "Station Name (Train Icon)": layerStationName,
-      "DOH KM (Purple)": layerDOH
-    };
+  // -------- Layer Control --------
+  const overlays = {
+    "AL Track KKNK (Red)": layerALTrack,
+    "Station (Gray)": layerStation,
+    "Station Name (Train Icon)": layerStationName,
+    "DOH KM (Purple)": layerDOH
+  };
 
-    L.control.layers(null, overlays, { collapsed: false }).addTo(map);
-  </script>
+  L.control.layers(baseLayers, overlays, { collapsed: false }).addTo(map);
+</script>
 </body>
 </html>
