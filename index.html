@@ -44,7 +44,7 @@
   omnivore.kml('AL_Track_KKNK.kml')
     .on('ready', function () {
       this.eachLayer(layer => {
-        layer.setStyle({ color: "red", weight: 3 });
+        layer.setStyle({ color: "red", weight: 1 });
       });
       this.addTo(layerAL);
       map.fitBounds(this.getBounds());
