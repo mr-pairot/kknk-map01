@@ -1,120 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>KKNK Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<title>KKNK Map Simple</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Omnivore -->
-  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+<!-- Omnivore -->
+<script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  <!-- Awesome Markers -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
+<!-- Awesome Markers -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
 
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-  <style>
-    #map { height: 100vh; width: 100vw; }
-  </style>
+<style>
+  html, body, #map { height: 100%; margin: 0; padding: 0; }
+</style>
 </head>
 <body>
+
 <div id="map"></div>
 
 <script>
   // สร้างแผนที่
-  const map = L.map('map').setView([16.5, 102.5], 8);
-  const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  var map = L.map('map').setView([16.5, 102.5], 8);
+
+  var baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
   // สร้าง LayerGroups
-  const layerAL = L.layerGroup().addTo(map);       // เปิด default
-  const layerStation = L.layerGroup();
-  const layerStationName = L.layerGroup();
-  const layerDOH = L.layerGroup();
+  var layerAL = L.layerGroup().addTo(map); // เปิด default
+  var layerStation = L.layerGroup();
+  var layerStationName = L.layerGroup();
+  var layerDOH = L.layerGroup();
 
-  // สร้าง Awesome Marker icon สำหรับสถานี
-  const trainIcon = L.AwesomeMarkers.icon({
+  // ไอคอนรถไฟ
+  var trainIcon = L.AwesomeMarkers.icon({
     icon: 'train',
     markerColor: 'blue',
     prefix: 'fa'
   });
 
-  // โหลดไฟล์ KML/JSON ด้วย Promise เพื่อรอโหลดทั้งหมดก่อนสร้าง Layer Control
-  function loadKML(url, layerGroup, styleFn) {
-    return new Promise((resolve, reject) => {
-      omnivore.kml(url)
-        .on('ready', function () {
-          if(styleFn) this.eachLayer(styleFn);
-          this.addTo(layerGroup);
-          resolve(this);
-        })
-        .on('error', reject);
-    });
-  }
-
-  function loadStationNameKML(url, layerGroup) {
-    return new Promise((resolve, reject) => {
-      omnivore.kml(url)
-        .on('ready', function () {
-          this.eachLayer(layer => {
-            const name = layer.feature?.properties?.name;
-            if (name) {
-              L.marker(layer.getLatLng(), { icon: trainIcon })
-                .bindTooltip(name, { permanent: true, direction: 'top', offset: [0, -10] })
-                .addTo(layerGroup);
-            }
-          });
-          resolve(this);
-        })
-        .on('error', reject);
-    });
-  }
-
-  function loadGeoJSON(url, layerGroup, style) {
-    return fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        const geoLayer = L.geoJSON(data, { style });
-        geoLayer.addTo(layerGroup);
-        return geoLayer;
+  // โหลด AL Track KML
+  omnivore.kml('AL_Track_KKNK.kml')
+    .on('ready', function() {
+      this.eachLayer(function(layer) {
+        layer.setStyle({ color: 'red', weight: 3 });
       });
-  }
+      this.addTo(layerAL);
+      map.fitBounds(this.getBounds());
+    });
 
-  // รอโหลดไฟล์ทั้งหมด
-  Promise.all([
-    loadKML('AL_Track_KKNK.kml', layerAL, l => l.setStyle({ color: 'red', weight: 3 })),
-    loadKML('Station.kml', layerStation, l => l.setStyle({ color: 'gray', weight: 2 })),
-    loadStationNameKML('Station_Name.kml', layerStationName),
-    loadGeoJSON('DOH_Show_KM.json', layerDOH, { color: 'purple', weight: 2 }),
-  ])
-  .then(() => {
-    // ปรับขอบเขตแผนที่ให้อยู่ใน AL Track
-    if(layerAL.getBounds && !layerAL.getBounds().isValid()) {
-      map.fitBounds(layerAL.getBounds());
-    }
+  // โหลด Station KML
+  omnivore.kml('Station.kml')
+    .on('ready', function() {
+      this.eachLayer(function(layer) {
+        layer.setStyle({ color: 'gray', weight: 2 });
+      });
+      this.addTo(layerStation);
+    });
 
-    // สร้าง Layer Control
-    const overlays = {
-      "AL Track (Red)": layerAL,
-      "Station (Gray)": layerStation,
-      "Station Name (Train Icon)": layerStationName,
-      "DOH KM (Purple)": layerDOH
-    };
-    L.control.layers({ "OpenStreetMap": baseMap }, overlays, { collapsed: false }).addTo(map);
-  })
-  .catch(err => {
-    console.error("Load error:", err);
-    alert("เกิดข้อผิดพลาดในการโหลดข้อมูล โปรดลองใหม่");
-  });
+  // โหลด Station_Name KML
+  omnivore.kml('Station_Name.kml')
+    .on('ready', function() {
+      this.eachLayer(function(layer) {
+        var name = layer.feature && layer.feature.properties && layer.feature.properties.name;
+        if(name) {
+          L.marker(layer.getLatLng(), { icon: trainIcon })
+            .bindTooltip(name, { permanent: true, direction: 'top', offset: [0, -10] })
+            .addTo(layerStationName);
+        }
+      });
+    });
 
+  // โหลด DOH GeoJSON
+  fetch('DOH_Show_KM.json')
+    .then(response => response.json())
+    .then(function(data) {
+      var geojsonLayer = L.geoJSON(data, { style: { color: 'purple', weight: 2 } });
+      geojsonLayer.addTo(layerDOH);
+    });
+
+  // สร้าง layer control
+  var overlays = {
+    "AL Track (Red)": layerAL,
+    "Station (Gray)": layerStation,
+    "Station Name (Train Icon)": layerStationName,
+    "DOH KM (Purple)": layerDOH
+  };
+
+  L.control.layers({ "OpenStreetMap": baseMap }, overlays, { collapsed: false }).addTo(map);
 </script>
+
 </body>
 </html>
