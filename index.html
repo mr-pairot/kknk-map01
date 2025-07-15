@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>KKNK Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,11 +12,11 @@
   <!-- Omnivore -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  <!-- AwesomeMarkers -->
+  <!-- Leaflet Awesome Markers -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
 
-  <!-- FontAwesome -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
@@ -27,55 +27,59 @@
 <div id="map"></div>
 
 <script>
-  const map = L.map("map").setView([16.5, 102.5], 8);
+  const map = L.map('map').setView([16.5, 102.5], 8);
 
-  const baseMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
-    attribution: "&copy; OpenStreetMap contributors"
+    attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // สร้างแต่ละ layer
-  const layerAL = L.layerGroup().addTo(map);
-  const layerStation = L.layerGroup();
-  const layerStationName = L.layerGroup();
-  const layerDOH = L.layerGroup();
+  // สร้าง LayerGroups
+  const layerAL = L.layerGroup().addTo(map);          // เปิดไว้
+  const layerStation = L.layerGroup();                // ปิดไว้
+  const layerStationName = L.layerGroup();            // ปิดไว้
+  const layerDOH = L.layerGroup();                    // ปิดไว้
 
-  // AL Track
-  omnivore.kml("AL_Track_KKNK.kml")
-    .on("ready", function () {
-      this.eachLayer(l => l.setStyle({ color: "red", weight: 3 }));
+  // โหลด AL Track
+  omnivore.kml('AL_Track_KKNK.kml')
+    .on('ready', function () {
+      this.eachLayer(layer => {
+        layer.setStyle({ color: "red", weight: 3 });
+      });
       this.addTo(layerAL);
       map.fitBounds(this.getBounds());
     });
 
-  // Station
-  omnivore.kml("Station.kml")
-    .on("ready", function () {
-      this.eachLayer(l => l.setStyle({ color: "gray", weight: 2 }));
+  // โหลด Station.kml
+  omnivore.kml('Station.kml')
+    .on('ready', function () {
+      this.eachLayer(layer => {
+        layer.setStyle({ color: "gray", weight: 2 });
+      });
       this.addTo(layerStation);
     });
 
-  // Station Name with train icon
+  // โหลด Station_Name.kml พร้อม train icon และ tooltip
   const trainIcon = L.AwesomeMarkers.icon({
-    icon: "train",
-    markerColor: "blue",
-    prefix: "fa"
+    icon: 'train',
+    markerColor: 'blue',
+    prefix: 'fa'
   });
 
-  omnivore.kml("Station_Name.kml")
-    .on("ready", function () {
+  omnivore.kml('Station_Name.kml')
+    .on('ready', function () {
       this.eachLayer(layer => {
         const name = layer.feature?.properties?.name;
         if (name) {
           L.marker(layer.getLatLng(), { icon: trainIcon })
-            .bindTooltip(name, { permanent: true, direction: "top" })
+            .bindTooltip(name, { permanent: true, direction: 'top', offset: [0, -10] })
             .addTo(layerStationName);
         }
       });
     });
 
-  // DOH GeoJSON
-  fetch("DOH_Show_KM.json")
+  // โหลด DOH GeoJSON
+  fetch('DOH_Show_KM.json')
     .then(res => res.json())
     .then(data => {
       const geoLayer = L.geoJSON(data, {
@@ -84,7 +88,7 @@
       geoLayer.addTo(layerDOH);
     });
 
-  // เพิ่ม Layer Control ทันที (แม้บางอันยังโหลดไม่เสร็จ แต่ไม่มีผล)
+  // เพิ่ม Layer Control
   const overlays = {
     "AL Track KKNK (Red)": layerAL,
     "Station (Gray)": layerStation,
@@ -92,11 +96,7 @@
     "DOH KM (Purple)": layerDOH
   };
 
-  const baseLayers = {
-    "OpenStreetMap": baseMap
-  };
-
-  L.control.layers(baseLayers, overlays, { collapsed: false }).addTo(map);
+  L.control.layers({ "OpenStreetMap": baseMap }, overlays, { collapsed: false }).addTo(map);
 </script>
 </body>
 </html>
