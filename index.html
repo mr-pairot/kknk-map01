@@ -1,34 +1,61 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Leaflet Layers Local</title><meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></head>
-<body><div id="map" style="height:100vh"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
-<script>
-  const map = L.map('map').setView([16.5,102.5],8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OSM'}).addTo(map);
+<head>
+  <meta charset="utf-8">
+  <title>Leaflet Layers Optimized</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; width: 100vw; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
 
-  const layerALTrack = omnivore.kml("AL_Track_KKNK.kml");
-  const layerStation = omnivore.kml("Station.kml");
-  const layerDOH = L.layerGroup();
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Omnivore -->
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  fetch("DOH_Show_KM.json")
-    .then(r=>r.json())
-    .then(d=>{
-      L.geoJSON(d,{style:{color:'blue',weight:3}}).addTo(layerDOH);
-    });
+  <script>
+    const map = L.map('map').setView([16.5, 102.5], 8);
 
-  layerALTrack.addTo(map);
-  layerStation.addTo(map);
-  layerDOH.addTo(map);
+    // Tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-  L.control.layers(null,{
-    "AL Track KKNK": layerALTrack,
-    "Station": layerStation,
-    "DOH KM": layerDOH
-  },{collapsed:false}).addTo(map);
+    // === Layers ===
 
-  layerALTrack.on('ready',()=>map.fitBounds(layerALTrack.getBounds()));
-</script>
+    // 1. AL Track KKNK (default on)
+    const layerALTrack = omnivore.kml("AL_Track_KKNK.kml")
+      .on('ready', function () {
+        map.fitBounds(this.getBounds());
+      })
+      .addTo(map);
+
+    // 2. Station.kml (default off)
+    const layerStation = omnivore.kml("Station.kml");
+
+    // 3. DOH_Show_KM.json (default off)
+    const layerDOH = L.layerGroup();
+    fetch("DOH_Show_KM.json")
+      .then(res => res.json())
+      .then(data => {
+        const geoLayer = L.geoJSON(data, {
+          style: { color: 'blue', weight: 2 }
+        });
+        geoLayer.addTo(layerDOH);
+      });
+
+    // Layer control
+    const overlays = {
+      "AL Track KKNK": layerALTrack,
+      "Station (KML)": layerStation,
+      "DOH KM (GeoJSON)": layerDOH
+    };
+    L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+  </script>
 </body>
 </html>
