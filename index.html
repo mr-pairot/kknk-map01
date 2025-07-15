@@ -75,6 +75,7 @@
       line-height: 18px;
       font-size: 14px;
       color: #333;
+      user-select: none;
     }
 
     .legend-item {
@@ -319,6 +320,36 @@
           break;
       }
     });
+
+    // Add legend control
+    const legend = L.control({ position: "bottomright" });
+    legend.onAdd = function (map) {
+      const div = L.DomUtil.create("div", "legend");
+      div.innerHTML = `
+        <div class="legend-item">
+          <span class="legend-color" style="background-color: red;"></span>
+          AL Track KKNK
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background-color: gray;"></span>
+          Station Layout
+        </div>
+        <div class="legend-item">
+          <i class="fa fa-train legend-icon" style="color: green;"></i>
+          Station (สถานี)
+        </div>
+        <div class="legend-item">
+          <i class="fa fa-pause legend-icon" style="color: orange;"></i>
+          Stop (ที่หยุดรถ)
+        </div>
+        <div class="legend-item">
+          <i class="fa fa-home legend-icon" style="color: gray;"></i>
+          Origin (ต้นทาง)
+        </div>
+      `;
+      return div;
+    };
+    legend.addTo(map);
 
     // Initialize map with AL Track loaded and visible
     loadALTrack();
