@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Leaflet Layers Optimized</title>
+  <title>Leaflet Custom Layer Styles</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -28,23 +28,38 @@
 
     // === Layers ===
 
-    // 1. AL Track KKNK (default on)
+    // 1. AL Track (Red)
     const layerALTrack = omnivore.kml("AL_Track_KKNK.kml")
       .on('ready', function () {
+        this.eachLayer(function (layer) {
+          if (layer.setStyle) {
+            layer.setStyle({ color: "red", weight: 3 });
+          }
+        });
         map.fitBounds(this.getBounds());
       })
       .addTo(map);
 
-    // 2. Station.kml (default off)
-    const layerStation = omnivore.kml("Station.kml");
+    // 2. Station (Gray)
+    const layerStation = omnivore.kml("Station.kml")
+      .on('ready', function () {
+        this.eachLayer(function (layer) {
+          if (layer.setStyle) {
+            layer.setStyle({ color: "gray", weight: 2 });
+          }
+        });
+      });
 
-    // 3. DOH_Show_KM.json (default off)
+    // 3. DOH KM (Purple)
     const layerDOH = L.layerGroup();
     fetch("DOH_Show_KM.json")
       .then(res => res.json())
       .then(data => {
         const geoLayer = L.geoJSON(data, {
-          style: { color: 'blue', weight: 2 }
+          style: {
+            color: 'purple',
+            weight: 2
+          }
         });
         geoLayer.addTo(layerDOH);
       });
