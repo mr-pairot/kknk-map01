@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>KKNK Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -27,49 +27,54 @@
 <div id="map"></div>
 
 <script>
-  const map = L.map('map').setView([16.5, 102.5], 8);
+  const map = L.map("map").setView([16.5, 102.5], 8);
 
-  const baseMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const baseMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
-  // Layer 1: AL Track
-  const layerAL = omnivore.kml('AL_Track_KKNK.kml')
-    .on('ready', function () {
-      this.eachLayer(layer => {
-        layer.setStyle?.({ color: "red", weight: 3 });
-      });
+  // สร้างแต่ละ layer
+  const layerAL = L.layerGroup().addTo(map);
+  const layerStation = L.layerGroup();
+  const layerStationName = L.layerGroup();
+  const layerDOH = L.layerGroup();
+
+  // AL Track
+  omnivore.kml("AL_Track_KKNK.kml")
+    .on("ready", function () {
+      this.eachLayer(l => l.setStyle({ color: "red", weight: 3 }));
+      this.addTo(layerAL);
       map.fitBounds(this.getBounds());
     });
 
-  // Layer 2: Station
-  const layerStation = omnivore.kml('Station.kml')
-    .on('ready', function () {
-      this.eachLayer(layer => {
-        layer.setStyle?.({ color: "gray", weight: 2 });
-      });
+  // Station
+  omnivore.kml("Station.kml")
+    .on("ready", function () {
+      this.eachLayer(l => l.setStyle({ color: "gray", weight: 2 }));
+      this.addTo(layerStation);
     });
 
-  // Layer 3: Station Name
+  // Station Name with train icon
   const trainIcon = L.AwesomeMarkers.icon({
-    icon: "train", markerColor: "blue", prefix: "fa"
+    icon: "train",
+    markerColor: "blue",
+    prefix: "fa"
   });
-  const layerStationName = L.layerGroup();
+
   omnivore.kml("Station_Name.kml")
     .on("ready", function () {
       this.eachLayer(layer => {
         const name = layer.feature?.properties?.name;
         if (name) {
-          const marker = L.marker(layer.getLatLng(), { icon: trainIcon })
-            .bindTooltip(name, { permanent: true, direction: "top", offset: [0, -10] });
-          marker.addTo(layerStationName);
+          L.marker(layer.getLatLng(), { icon: trainIcon })
+            .bindTooltip(name, { permanent: true, direction: "top" })
+            .addTo(layerStationName);
         }
       });
     });
 
-  // Layer 4: DOH
-  const layerDOH = L.layerGroup();
+  // DOH GeoJSON
   fetch("DOH_Show_KM.json")
     .then(res => res.json())
     .then(data => {
@@ -79,7 +84,7 @@
       geoLayer.addTo(layerDOH);
     });
 
-  // Add all to Layer Control
+  // เพิ่ม Layer Control ทันที (แม้บางอันยังโหลดไม่เสร็จ แต่ไม่มีผล)
   const overlays = {
     "AL Track KKNK (Red)": layerAL,
     "Station (Gray)": layerStation,
