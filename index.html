@@ -11,6 +11,7 @@
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-tilelayer-wmts@1.0.0/leaflet-tilelayer-wmts.js"></script>
 
   <!-- Omnivore for KML -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
@@ -191,6 +192,17 @@
         {
           maxZoom: 17,
           attribution: "&copy; OpenTopoMap contributors"
+        }
+      ),
+      "Longdo dol_hd": L.tileLayer.wmts(
+        "https://ms.longdo.com/mapproxy/wmts", 
+        {
+          layer: "dol_hd",
+          style: "default",
+          tilematrixSet: "GoogleMapsCompatible",
+          format: "image/png",
+          tileSize: 256,
+          attribution: "&copy; Longdo Map — dol_hd"
         }
       )
     };
