@@ -66,6 +66,18 @@
       pointer-events: none;
     }
 
+    /* STA station tooltip style */
+    .sta-tooltip {
+      background: rgba(33, 150, 243, 0.9);
+      color: #fff;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+
     /* Debug info */
     .debug-info {
       position: absolute;
@@ -109,7 +121,8 @@
     let loadingStates = {
       alTrack: false,
       stationLayout: false,
-      stationName: false
+      stationName: false,
+      showSTA: false
     };
 
     function updateLoadingState(layer, isLoading) {
@@ -146,11 +159,13 @@
     const layerALTrack = L.layerGroup();
     const layerStationLayout = L.layerGroup();
     const layerStationName = L.layerGroup();
+    const layerShowSTA = L.layerGroup();
 
     // Flags to prevent reloading
     let isALTrackLoaded = false;
     let isStationLayoutLoaded = false;
     let isStationNameLoaded = false;
+    let isShowSTALoaded = false;
 
     // Enhanced timeout handler
     function createTimeout(layerName, timeoutMs = 30000) {
@@ -425,6 +440,129 @@
         });
     }
 
+    // 4. Load Show STA (blue dot markers from Sta.kml)
+    function loadShowSTA() {
+      if (isShowSTALoaded) return;
+      
+      updateLoadingState('showSTA', true);
+      debugLog('Loading Show STA...');
+
+      // Define icon for STA stations
+      const staIcon = L.AwesomeMarkers.icon({
+        icon: "dot-circle",
+        markerColor: "blue",
+        prefix: "fas",
+      });
+
+      // Fallback icon if AwesomeMarkers is not available
+      const fallbackIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      const timeoutId = createTimeout('Show STA', 20000);
+
+      omnivore
+        .kml("Sta.kml")
+        .on("ready", function () {
+          clearTimeout(timeoutId);
+          debugLog('Show STA KML loaded, processing...');
+
+          let markerCount = 0;
+          let errorCount = 0;
+
+          this.eachLayer((layer) => {
+            try {
+              let stationName = null;
+              let coords = null;
+
+              // Extract data from KML structure
+              if (layer.feature && layer.feature.properties) {
+                const props = layer.feature.properties;
+                stationName = props.name || props.Name;
+                
+                // Get coordinates from geometry
+                if (layer.feature.geometry && layer.feature.geometry.coordinates) {
+                  const geomCoords = layer.feature.geometry.coordinates;
+                  coords = [geomCoords[1], geomCoords[0]]; // [lat, lng] from [lng, lat, alt]
+                }
+              }
+
+              // Fallback to layer methods
+              if (!coords && layer.getLatLng) {
+                coords = layer.getLatLng();
+              }
+
+              // Debug log for troubleshooting
+              if (DEBUG) {
+                console.log('Processing STA layer:', {
+                  name: stationName,
+                  coords: coords,
+                  feature: layer.feature
+                });
+              }
+
+              // Create marker if we have valid data
+              if (coords && stationName) {
+                const icon = typeof L.AwesomeMarkers !== 'undefined' ? staIcon : fallbackIcon;
+                const marker = L.marker(coords, { icon: icon })
+                  .bindTooltip(
+                    `STA ${stationName}`,
+                    {
+                      permanent: true,
+                      direction: "top",
+                      offset: [0, -10],
+                      className: "sta-tooltip",
+                    }
+                  )
+                  .bindPopup(`
+                    <div style="text-align: center;">
+                      <strong>Station ${stationName}</strong><br>
+                      <small>Coordinates: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}</small>
+                    </div>
+                  `);
+                layerShowSTA.addLayer(marker);
+                markerCount++;
+              } else {
+                errorCount++;
+                console.warn('Skipped STA layer - incomplete data:', {
+                  name: stationName,
+                  coords: coords,
+                  layer: layer
+                });
+              }
+            } catch (error) {
+              errorCount++;
+              console.error("Error processing STA layer:", error, layer);
+            }
+          });
+
+          if (markerCount === 0) {
+            debugLog(`No STA markers created. Errors: ${errorCount}`);
+            console.error('STA KML processing failed. Check if Sta.kml exists and is accessible.');
+            alert(
+              `Warning: No STA markers were created (${errorCount} errors). Check the console for details.`
+            );
+          }
+
+          isShowSTALoaded = true;
+          updateLoadingState('showSTA', false);
+          debugLog(`Show STA loaded: ${markerCount} markers, ${errorCount} errors`);
+        })
+        .on("error", (err) => {
+          clearTimeout(timeoutId);
+          console.error("Error loading Show STA KML:", err);
+          alert("Error loading Show STA data: " + err.message);
+          updateLoadingState('showSTA', false);
+          debugLog('Show STA loading error');
+          isShowSTALoaded = false;
+        });
+    }
+
     // Fallback function for when AwesomeMarkers is not available
     function loadStationNameWithFallback(defaultIcon) {
       const timeoutId = createTimeout('Station Name', 20000);
@@ -506,6 +644,7 @@
       "AL Track KKNK (red)": layerALTrack,
       "Station Layout (gray)": layerStationLayout,
       "Station Name (train icon)": layerStationName,
+      "Show STA (blue dots)": layerShowSTA,
     };
 
     const layerControl = L.control.layers(null, overlays, {
@@ -527,6 +666,10 @@
           loadStationName();
           layerStationName.addTo(map);
           break;
+        case "Show STA (blue dots)":
+          loadShowSTA();
+          layerShowSTA.addTo(map);
+          break;
       }
     });
 
@@ -541,6 +684,9 @@
           break;
         case "Station Name (train icon)":
           map.removeLayer(layerStationName);
+          break;
+        case "Show STA (blue dots)":
+          map.removeLayer(layerShowSTA);
           break;
       }
     });
@@ -577,7 +723,7 @@
 
     // Check if files exist on load
     function checkFileAccess() {
-      const files = ['AL_Track_KKNK.kml', 'Station.kml', 'Station_Name.kml'];
+      const files = ['AL_Track_KKNK.kml', 'Station.kml', 'Station_Name.kml', 'Sta.kml'];
       files.forEach(file => {
         fetch(file, { method: 'HEAD' })
           .then(response => {
