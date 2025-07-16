@@ -434,7 +434,7 @@
               if (coords && stationName) {
                 // ใช้ marker แบบวงกลมสีฟ้า
                 const marker = L.circleMarker(coords, {
-                  radius: 8,
+                  radius: 5,
                   color: '#2196f3',
                   fillColor: '#2196f3',
                   fillOpacity: 0.9,
@@ -451,7 +451,7 @@
                 )
                 .bindPopup(`
                   <div style="text-align: center;">
-                    <strong>Station ${stationName}</strong><br>
+                    <strong>กม. ${stationName}</strong><br>
                     <small>Coordinates: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}</small>
                   </div>
                 `);
