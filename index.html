@@ -66,39 +66,6 @@
       pointer-events: none;
     }
 
-    /* Legend */
-    .legend {
-      background: white;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      line-height: 18px;
-      font-size: 14px;
-      color: #333;
-      user-select: none;
-    }
-
-    .legend-item {
-      margin: 4px 0;
-      display: flex;
-      align-items: center;
-    }
-
-    .legend-color {
-      width: 20px;
-      height: 4px;
-      display: inline-block;
-      margin-right: 8px;
-      vertical-align: middle;
-      border-radius: 2px;
-    }
-
-    .legend-icon {
-      margin-right: 8px;
-      font-size: 16px;
-      line-height: 1;
-    }
-
     /* Debug info */
     .debug-info {
       position: absolute;
@@ -577,36 +544,6 @@
           break;
       }
     });
-
-    // Add legend control
-    const legend = L.control({ position: "bottomright" });
-    legend.onAdd = function (map) {
-      const div = L.DomUtil.create("div", "legend");
-      div.innerHTML = `
-        <div class="legend-item">
-          <span class="legend-color" style="background-color: red;"></span>
-          AL Track KKNK
-        </div>
-        <div class="legend-item">
-          <span class="legend-color" style="background-color: gray;"></span>
-          Station Layout
-        </div>
-        <div class="legend-item">
-          <i class="fas fa-train legend-icon" style="color: green;"></i>
-          Station (สถานี)
-        </div>
-        <div class="legend-item">
-          <i class="fas fa-pause legend-icon" style="color: orange;"></i>
-          Stop (ที่หยุดรถ)
-        </div>
-        <div class="legend-item">
-          <i class="fas fa-home legend-icon" style="color: red;"></i>
-          Origin (ต้นทาง)
-        </div>
-      `;
-      return div;
-    };
-    legend.addTo(map);
 
     // Initialize map with AL Track loaded and shown
     loadALTrack();
