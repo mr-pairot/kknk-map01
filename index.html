@@ -151,6 +151,34 @@
           attribution: "&copy; OpenStreetMap contributors",
         }
       ),
+      "Google Satellite": L.tileLayer(
+        "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        {
+          maxZoom: 20,
+          attribution: "&copy; Google",
+        }
+      ),
+      "Google Streets": L.tileLayer(
+        "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        {
+          maxZoom: 20,
+          attribution: "&copy; Google",
+        }
+      ),
+      "Google Terrain": L.tileLayer(
+        "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+        {
+          maxZoom: 20,
+          attribution: "&copy; Google",
+        }
+      ),
+      "GISTDA": L.tileLayer(
+        "https://ms.longdo.com/mmmap/image.php?typ=base&zoom={z}&x={x}&y={y}",
+        {
+          maxZoom: 18,
+          attribution: "&copy; GISTDA, Longdo Map",
+        }
+      ),
       "Satellite": L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
@@ -163,20 +191,6 @@
         {
           maxZoom: 17,
           attribution: "&copy; OpenTopoMap contributors"
-        }
-      ),
-      "CartoDB Light": L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        {
-          maxZoom: 19,
-          attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
-        }
-      ),
-      "CartoDB Dark": L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        {
-          maxZoom: 19,
-          attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
         }
       )
     };
