@@ -194,17 +194,13 @@
           attribution: "&copy; OpenTopoMap contributors"
         }
       ),
-      "Longdo dol_hd": L.tileLayer.wmts(
-        "https://ms.longdo.com/mapproxy/wmts", 
+      "Longdo dol_hd": L.tileLayer(
+        "https://ms.longdo.com/mapproxy/wmts/dol_hd/default/GoogleMapsCompatible/{z}/{y}/{x}.png",
         {
-          layer: "dol_hd",
-          style: "default",
-          tilematrixSet: "GoogleMapsCompatible",
-          format: "image/png",
-          tileSize: 256,
-          tilematrixPrefix: '',
-          crossOrigin: true,
-          attribution: "&copy; Longdo Map — dol_hd"
+           tileSize: 256,
+           maxZoom: 20,
+           attribution: "© Longdo Map - dol_hd",
+           crossOrigin: true,
         }
       )
     };
