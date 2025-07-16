@@ -18,14 +18,14 @@
   <!-- Leaflet Awesome Markers CSS & JS -->
   <link
     rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css"
+    href="https://unpkg.com/leaflet.awesome-markers@2.0.5/dist/leaflet.awesome-markers.css"
   />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.min.js"></script>
+  <script src="https://unpkg.com/leaflet.awesome-markers@2.0.5/dist/leaflet.awesome-markers.js"></script>
 
-  <!-- FontAwesome 4.7.0 for compatibility -->
+  <!-- FontAwesome 5.15.4 for better compatibility -->
   <link
     rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
   />
 
   <style>
@@ -117,7 +117,7 @@
 <body>
   <div id="map"></div>
   <div id="loading" class="loading">
-    <i class="fa fa-spinner fa-spin"></i> Loading...
+    <i class="fas fa-spinner fa-spin"></i> Loading...
   </div>
   <div id="debug-info" class="debug-info"></div>
 
@@ -315,27 +315,46 @@
       updateLoadingState('stationName', true);
       debugLog('Loading Station Names...');
 
+      // Check if L.AwesomeMarkers is available
+      if (typeof L.AwesomeMarkers === 'undefined') {
+        console.error('L.AwesomeMarkers is not loaded!');
+        alert('Error: Awesome Markers library not loaded. Using default markers.');
+        
+        // Fallback to default markers
+        const defaultIcon = L.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+        
+        loadStationNameWithFallback(defaultIcon);
+        return;
+      }
+
       // Define icons for different styles - matching KML styleUrl
       const icons = {
         station: L.AwesomeMarkers.icon({
           icon: "train",
           markerColor: "green",
-          prefix: "fa",
+          prefix: "fas",
         }),
         stop: L.AwesomeMarkers.icon({
           icon: "pause",
           markerColor: "orange",
-          prefix: "fa",
+          prefix: "fas",
         }),
         origin: L.AwesomeMarkers.icon({
           icon: "home",
           markerColor: "red",
-          prefix: "fa",
+          prefix: "fas",
         }),
         default: L.AwesomeMarkers.icon({
-          icon: "map-marker",
+          icon: "map-marker-alt",
           markerColor: "blue",
-          prefix: "fa",
+          prefix: "fas",
         }),
       };
 
@@ -439,6 +458,82 @@
         });
     }
 
+    // Fallback function for when AwesomeMarkers is not available
+    function loadStationNameWithFallback(defaultIcon) {
+      const timeoutId = createTimeout('Station Name', 20000);
+
+      omnivore
+        .kml("Station_Name.kml")
+        .on("ready", function () {
+          clearTimeout(timeoutId);
+          debugLog('Station Name KML loaded (fallback mode), processing...');
+
+          let markerCount = 0;
+          let errorCount = 0;
+
+          this.eachLayer((layer) => {
+            try {
+              let stationName = null;
+              let coords = null;
+
+              // Extract data from KML structure
+              if (layer.feature && layer.feature.properties) {
+                const props = layer.feature.properties;
+                stationName = props.name || props.Name;
+                
+                // Get coordinates from geometry
+                if (layer.feature.geometry && layer.feature.geometry.coordinates) {
+                  const geomCoords = layer.feature.geometry.coordinates;
+                  coords = [geomCoords[1], geomCoords[0]]; // [lat, lng] from [lng, lat, alt]
+                }
+              }
+
+              // Fallback to layer methods
+              if (!coords && layer.getLatLng) {
+                coords = layer.getLatLng();
+              }
+
+              // Create marker if we have valid data
+              if (coords && stationName) {
+                const marker = L.marker(coords, { icon: defaultIcon }).bindTooltip(
+                  stationName,
+                  {
+                    permanent: true,
+                    direction: "top",
+                    offset: [0, -10],
+                    className: "station-tooltip",
+                  }
+                );
+                layerStationName.addLayer(marker);
+                markerCount++;
+              } else {
+                errorCount++;
+                console.warn('Skipped layer - incomplete data:', {
+                  name: stationName,
+                  coords: coords,
+                  layer: layer
+                });
+              }
+            } catch (error) {
+              errorCount++;
+              console.error("Error processing station layer:", error, layer);
+            }
+          });
+
+          isStationNameLoaded = true;
+          updateLoadingState('stationName', false);
+          debugLog(`Station Names loaded (fallback): ${markerCount} markers, ${errorCount} errors`);
+        })
+        .on("error", (err) => {
+          clearTimeout(timeoutId);
+          console.error("Error loading Station Name KML:", err);
+          alert("Error loading Station Name data: " + err.message);
+          updateLoadingState('stationName', false);
+          debugLog('Station Name loading error');
+          isStationNameLoaded = false;
+        });
+    }
+
     // Layer control overlays
     const overlays = {
       "AL Track KKNK (red)": layerALTrack,
@@ -497,15 +592,15 @@
           Station Layout
         </div>
         <div class="legend-item">
-          <i class="fa fa-train legend-icon" style="color: green;"></i>
+          <i class="fas fa-train legend-icon" style="color: green;"></i>
           Station (สถานี)
         </div>
         <div class="legend-item">
-          <i class="fa fa-pause legend-icon" style="color: orange;"></i>
+          <i class="fas fa-pause legend-icon" style="color: orange;"></i>
           Stop (ที่หยุดรถ)
         </div>
         <div class="legend-item">
-          <i class="fa fa-home legend-icon" style="color: red;"></i>
+          <i class="fas fa-home legend-icon" style="color: red;"></i>
           Origin (ต้นทาง)
         </div>
       `;
@@ -559,8 +654,36 @@
       });
     }
 
-    // Check file access on page load
-    window.addEventListener('load', checkFileAccess);
+    // Check library loading
+    function checkLibraries() {
+      const libraries = [
+        { name: 'Leaflet', obj: 'L' },
+        { name: 'Omnivore', obj: 'omnivore' },
+        { name: 'AwesomeMarkers', obj: 'L.AwesomeMarkers' }
+      ];
+      
+      libraries.forEach(lib => {
+        const parts = lib.obj.split('.');
+        let obj = window;
+        for (const part of parts) {
+          obj = obj[part];
+          if (!obj) break;
+        }
+        
+        if (!obj) {
+          console.warn(`${lib.name} library not loaded!`);
+          debugLog(`${lib.name} library missing`);
+        } else {
+          debugLog(`${lib.name} library loaded`);
+        }
+      });
+    }
+
+    // Check file access and libraries on page load
+    window.addEventListener('load', () => {
+      checkFileAccess();
+      checkLibraries();
+    });
   </script>
 </body>
 </html>
