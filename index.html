@@ -151,7 +151,7 @@
       }
     ).addTo(map);
 
-    // Layer groups
+    // Layer groups 
     const layerALTrack = L.layerGroup();
     const layerStationLayout = L.layerGroup();
     const layerStationName = L.layerGroup();
@@ -162,6 +162,34 @@
     let isStationLayoutLoaded = false;
     let isStationNameLoaded = false;
     let isShowSTALoaded = false;
+
+    // PNG Icons
+    const icons = {
+      station: L.icon({
+        iconUrl: 'img/train (blue).png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      }),
+      stop: L.icon({
+        iconUrl: 'img/train (orange).png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      }),
+      origin: L.icon({
+        iconUrl: 'img/train (gray).png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      }),
+      default: L.icon({
+        iconUrl: 'img/train (green).png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      })
+    };
 
     function createTimeout(layerName, timeoutMs = 30000) {
       return setTimeout(() => {
@@ -282,70 +310,29 @@
         });
     }
 
-    // 3. Load Station Name (train icons + permanent labels)
+    // 3. Load Station Name (train icons + permanent labels) - แก้ไขแล้ว
     function loadStationName() {
       if (isStationNameLoaded) return;
       
       updateLoadingState('stationName', true);
-      debugLog('Loading Station Names...');
-
-      if (typeof L.AwesomeMarkers === 'undefined') {
-        console.error('L.AwesomeMarkers is not loaded!');
-        alert('Error: Awesome Markers library not loaded. Using default markers.');
-        
-        const defaultIcon = L.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
-        
-        loadStationNameWithFallback(defaultIcon);
-        return;
-      }
-
-      const icons = {
-        station: L.AwesomeMarkers.icon({
-          icon: "train",
-          markerColor: "green",
-          prefix: "fas",
-        }),
-        stop: L.AwesomeMarkers.icon({
-          icon: "pause",
-          markerColor: "orange",
-          prefix: "fas",
-        }),
-        origin: L.AwesomeMarkers.icon({
-          icon: "home",
-          markerColor: "red",
-          prefix: "fas",
-        }),
-        default: L.AwesomeMarkers.icon({
-          icon: "map-marker-alt",
-          markerColor: "blue",
-          prefix: "fas",
-        }),
-      };
-
+      debugLog('Loading Station Name...');
+      
       const timeoutId = createTimeout('Station Name', 20000);
 
       omnivore
         .kml("Station_Name.kml")
         .on("ready", function () {
           clearTimeout(timeoutId);
-          debugLog('Station Name KML loaded, processing...');
-
+          
           let markerCount = 0;
           let errorCount = 0;
-
+          
           this.eachLayer((layer) => {
             try {
               let stationName = null;
               let styleUrl = null;
               let coords = null;
-
+              
               if (layer.feature && layer.feature.properties) {
                 const props = layer.feature.properties;
                 stationName = props.name || props.Name;
@@ -355,24 +342,16 @@
                   coords = [geomCoords[1], geomCoords[0]];
                 }
               }
-
+              
               if (!coords && layer.getLatLng) {
                 coords = layer.getLatLng();
               }
-
+              
+              // styleUrl เช่น "#station" ให้ตัด # ออก
               if (styleUrl && styleUrl.startsWith("#")) {
                 styleUrl = styleUrl.substring(1);
               }
-
-              if (DEBUG) {
-                console.log('Processing layer:', {
-                  name: stationName,
-                  styleUrl: styleUrl,
-                  coords: coords,
-                  feature: layer.feature
-                });
-              }
-
+              
               if (coords && stationName) {
                 const icon = icons[styleUrl] || icons.default;
                 const marker = L.marker(coords, { icon: icon }).bindTooltip(
@@ -388,29 +367,16 @@
                 markerCount++;
               } else {
                 errorCount++;
-                console.warn('Skipped layer - incomplete data:', {
-                  name: stationName,
-                  coords: coords,
-                  layer: layer
-                });
               }
             } catch (error) {
               errorCount++;
               console.error("Error processing station layer:", error, layer);
             }
           });
-
-          if (markerCount === 0) {
-            debugLog(`No markers created. Errors: ${errorCount}`);
-            console.error('KML processing failed. Check if Station_Name.kml exists and is accessible.');
-            alert(
-              `Warning: No station markers were created (${errorCount} errors). Check the console for details.`
-            );
-          }
-
+          
           isStationNameLoaded = true;
           updateLoadingState('stationName', false);
-          debugLog(`Station Names loaded: ${markerCount} markers, ${errorCount} errors`);
+          debugLog(`Station Name loaded: ${markerCount} markers, ${errorCount} errors`);
         })
         .on("error", (err) => {
           clearTimeout(timeoutId);
@@ -418,7 +384,6 @@
           alert("Error loading Station Name data: " + err.message);
           updateLoadingState('stationName', false);
           debugLog('Station Name loading error');
-          isStationNameLoaded = false;
         });
     }
 
@@ -528,76 +493,6 @@
         });
     }
 
-    function loadStationNameWithFallback(defaultIcon) {
-      const timeoutId = createTimeout('Station Name', 20000);
-
-      omnivore
-        .kml("Station_Name.kml")
-        .on("ready", function () {
-          clearTimeout(timeoutId);
-          debugLog('Station Name KML loaded (fallback mode), processing...');
-
-          let markerCount = 0;
-          let errorCount = 0;
-
-          this.eachLayer((layer) => {
-            try {
-              let stationName = null;
-              let coords = null;
-
-              if (layer.feature && layer.feature.properties) {
-                const props = layer.feature.properties;
-                stationName = props.name || props.Name;
-                if (layer.feature.geometry && layer.feature.geometry.coordinates) {
-                  const geomCoords = layer.feature.geometry.coordinates;
-                  coords = [geomCoords[1], geomCoords[0]];
-                }
-              }
-
-              if (!coords && layer.getLatLng) {
-                coords = layer.getLatLng();
-              }
-
-              if (coords && stationName) {
-                const marker = L.marker(coords, { icon: defaultIcon }).bindTooltip(
-                  stationName,
-                  {
-                    permanent: true,
-                    direction: "top",
-                    offset: [0, -10],
-                    className: "station-tooltip",
-                  }
-                );
-                layerStationName.addLayer(marker);
-                markerCount++;
-              } else {
-                errorCount++;
-                console.warn('Skipped layer - incomplete data:', {
-                  name: stationName,
-                  coords: coords,
-                  layer: layer
-                });
-              }
-            } catch (error) {
-              errorCount++;
-              console.error("Error processing station layer:", error, layer);
-            }
-          });
-
-          isStationNameLoaded = true;
-          updateLoadingState('stationName', false);
-          debugLog(`Station Names loaded (fallback): ${markerCount} markers, ${errorCount} errors`);
-        })
-        .on("error", (err) => {
-          clearTimeout(timeoutId);
-          console.error("Error loading Station Name KML:", err);
-          alert("Error loading Station Name data: " + err.message);
-          updateLoadingState('stationName', false);
-          debugLog('Station Name loading error');
-          isStationNameLoaded = false;
-        });
-    }
-
     // Layer control overlays
     const overlays = {
       "AL Track KKNK (red)": layerALTrack,
@@ -648,9 +543,11 @@
       }
     });
 
+    // เริ่มต้นโหลด AL Track และแสดงผล
     loadALTrack();
     layerALTrack.addTo(map);
 
+    // เพิ่ม scale control
     L.control
       .scale({
         metric: true,
@@ -659,20 +556,24 @@
       })
       .addTo(map);
 
+    // ย้าย zoom control ไปมุมขวาบน
     map.removeControl(map.zoomControl);
     L.control.zoom({
       position: "topright",
     }).addTo(map);
 
+    // Debug: แสดงพิกัดเมื่อคลิก
     map.on("click", (e) => {
       debugLog(`Clicked at: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
     });
 
+    // Global error handler
     window.addEventListener("error", (e) => {
       console.error("Global error:", e.error);
       debugLog(`Global error: ${e.error.message}`);
     });
 
+    // ตรวจสอบการเข้าถึงไฟล์
     function checkFileAccess() {
       const files = ['AL_Track_KKNK.kml', 'Station.kml', 'Station_Name.kml', 'Sta.kml'];
       files.forEach(file => {
@@ -688,6 +589,7 @@
       });
     }
 
+    // ตรวจสอบ libraries
     function checkLibraries() {
       const libraries = [
         { name: 'Leaflet', obj: 'L' },
@@ -712,6 +614,7 @@
       });
     }
 
+    // เรียกใช้เมื่อโหลดหน้าเสร็จ
     window.addEventListener('load', () => {
       checkFileAccess();
       checkLibraries();
