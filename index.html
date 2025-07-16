@@ -54,7 +54,7 @@
     }
 
     .station-tooltip {
-      background: rgba(255, 152, 0, 0.75);
+      background: rgba(255, 152, 80, 0.75); 
       color: #fff;
       border-radius: 3px;
       padding: 4px 8px;
@@ -65,7 +65,7 @@
     }
 
     .sta-tooltip {
-      background: rgba(33, 150, 243, 0.9);
+      background: rgba(33, 150, 243, 0.9);  
       color: #fff;
       border-radius: 3px;
       padding: 4px 8px;
@@ -142,16 +142,49 @@
       }
     }
 
-    // Add base map layer
-    const baseMap = L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 18,
-        attribution: "&copy; OpenStreetMap contributors",
-      }
-    ).addTo(map);
+    // Add multiple base map layers
+    const baseMaps = {
+      "OpenStreetMap": L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 18,
+          attribution: "&copy; OpenStreetMap contributors",
+        }
+      ),
+      "Satellite": L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 18,
+          attribution: "&copy; Esri &mdash; Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community"
+        }
+      ),
+      "Terrain": L.tileLayer(
+        "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 17,
+          attribution: "&copy; OpenTopoMap contributors"
+        }
+      ),
+      "CartoDB Light": L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
+        }
+      ),
+      "CartoDB Dark": L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
+        }
+      )
+    };
 
-    // Layer groups 
+    // เพิ่ม base map แรกเป็นค่าเริ่มต้น
+    baseMaps["OpenStreetMap"].addTo(map);
+
+    // Layer groups - แก้ไข: ไม่ให้ Station Name แสดงโดยอัตโนมัติ
     const layerALTrack = L.layerGroup();
     const layerStationLayout = L.layerGroup();
     const layerStationName = L.layerGroup();
@@ -434,7 +467,7 @@
               if (coords && stationName) {
                 // ใช้ marker แบบวงกลมสีฟ้า
                 const marker = L.circleMarker(coords, {
-                  radius: 5,
+                  radius: 8,
                   color: '#2196f3',
                   fillColor: '#2196f3',
                   fillOpacity: 0.9,
@@ -451,7 +484,7 @@
                 )
                 .bindPopup(`
                   <div style="text-align: center;">
-                    <strong>กม. ${stationName}</strong><br>
+                    <strong>Station ${stationName}</strong><br>
                     <small>Coordinates: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}</small>
                   </div>
                 `);
@@ -501,7 +534,7 @@
       "Show STA (blue dots)": layerShowSTA,
     };
 
-    const layerControl = L.control.layers(null, overlays, {
+    const layerControl = L.control.layers(baseMaps, overlays, {
       collapsed: false,
     }).addTo(map);
 
