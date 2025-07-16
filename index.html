@@ -511,7 +511,7 @@
                 const icon = typeof L.AwesomeMarkers !== 'undefined' ? staIcon : fallbackIcon;
                 const marker = L.marker(coords, { icon: icon })
                   .bindTooltip(
-                    `STA ${stationName}`,
+                    `${stationName}`,
                     {
                       permanent: true,
                       direction: "top",
