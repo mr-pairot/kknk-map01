@@ -146,13 +146,23 @@
     };
 
     function updateLoadingState(layer, isLoading) {
-      loadingStates[layer] = isLoading;
+      // Normalize layer key
+      const layerKey = layer.toLowerCase().replace(/\s+/g, '').replace('altrack', 'alTrack');
+      
+      if (loadingStates.hasOwnProperty(layerKey)) {
+        loadingStates[layerKey] = isLoading;
+      }
+      
       const isAnyLoading = Object.values(loadingStates).some(state => state);
       
       if (isAnyLoading) {
         document.getElementById("loading").style.display = "block";
       } else {
         document.getElementById("loading").style.display = "none";
+      }
+      
+      if (DEBUG) {
+        console.log('Loading states:', loadingStates);
       }
     }
 
@@ -178,7 +188,8 @@
     // Enhanced timeout handler
     function createTimeout(layerName, timeoutMs = 30000) {
       return setTimeout(() => {
-        updateLoadingState(layerName.toLowerCase().replace(/\s+/g, ''), false);
+        const stateKey = layerName.toLowerCase().replace(/\s+/g, '').replace('track', 'Track');
+        updateLoadingState(stateKey, false);
         debugLog(`${layerName} loading timeout`);
         alert(`Loading ${layerName} timeout. Please check if the file is accessible.`);
       }, timeoutMs);
@@ -199,6 +210,8 @@
           clearTimeout(timeoutId);
           
           let layerCount = 0;
+          let bounds = null;
+          
           this.eachLayer((layer) => {
             try {
               if (layer.setStyle) {
@@ -206,13 +219,40 @@
               }
               layerALTrack.addLayer(layer);
               layerCount++;
+              
+              // Collect bounds manually
+              if (layer.getBounds) {
+                if (bounds) {
+                  bounds.extend(layer.getBounds());
+                } else {
+                  bounds = layer.getBounds();
+                }
+              } else if (layer.getLatLng) {
+                const latlng = layer.getLatLng();
+                if (bounds) {
+                  bounds.extend(latlng);
+                } else {
+                  bounds = L.latLngBounds([latlng, latlng]);
+                }
+              }
             } catch (error) {
               console.error("Error processing AL Track layer:", error);
             }
           });
           
-          if (layerALTrack.getLayers().length > 0) {
-            map.fitBounds(layerALTrack.getBounds());
+          // Fit map to bounds if we have valid bounds
+          if (bounds && bounds.isValid()) {
+            map.fitBounds(bounds);
+          } else if (layerALTrack.getLayers().length > 0) {
+            // Alternative: try to get bounds from layerGroup
+            try {
+              const groupBounds = layerALTrack.getBounds();
+              if (groupBounds.isValid()) {
+                map.fitBounds(groupBounds);
+              }
+            } catch (e) {
+              console.warn('Could not get bounds from layerGroup:', e);
+            }
           }
           
           isALTrackLoaded = true;
