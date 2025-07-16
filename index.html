@@ -12,6 +12,8 @@
   />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-tilelayer-wmts@1.0.0/leaflet-tilelayer-wmts.js"></script>
+<script src="https://unpkg.com/esri-leaflet@3.0.11/dist/esri-leaflet.js"></script>
+<script src="https://unpkg.com/esri-leaflet-vector@3.0.0/dist/esri-leaflet-vector.js"></script>
 
   <!-- Omnivore for KML -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
@@ -194,6 +196,13 @@
           attribution: "&copy; OpenTopoMap contributors"
         }
       ),
+      "Esri World Imagery": L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          attribution: "© Esri, Maxar, GeoEye, Earthstar Geographics",
+          maxZoom: 18
+        }
+      ),     
       "Longdo dol_hd": L.tileLayer(
         "https://ms.longdo.com/mapproxy/wmts/dol_hd/default/GoogleMapsCompatible/{z}/{y}/{x}.png",
         {
