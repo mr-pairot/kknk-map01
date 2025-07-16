@@ -37,7 +37,6 @@
       padding: 0;
     }
 
-    /* Loading indicator */
     .loading {
       position: absolute;
       top: 50%;
@@ -54,7 +53,6 @@
       color: #333;
     }
 
-    /* Custom tooltip style for station names */
     .station-tooltip {
       background: rgba(0, 0, 0, 0.75);
       color: #fff;
@@ -66,7 +64,6 @@
       pointer-events: none;
     }
 
-    /* STA station tooltip style */
     .sta-tooltip {
       background: rgba(33, 150, 243, 0.9);
       color: #fff;
@@ -78,7 +75,6 @@
       pointer-events: none;
     }
 
-    /* Debug info */
     .debug-info {
       position: absolute;
       bottom: 10px;
@@ -167,7 +163,6 @@
     let isStationNameLoaded = false;
     let isShowSTALoaded = false;
 
-    // Enhanced timeout handler
     function createTimeout(layerName, timeoutMs = 30000) {
       return setTimeout(() => {
         const stateKey = layerName.toLowerCase().replace(/\s+/g, '').replace('track', 'Track');
@@ -202,7 +197,6 @@
               layerALTrack.addLayer(layer);
               layerCount++;
               
-              // Collect bounds manually
               if (layer.getBounds) {
                 if (bounds) {
                   bounds.extend(layer.getBounds());
@@ -222,11 +216,9 @@
             }
           });
           
-          // Fit map to bounds if we have valid bounds
           if (bounds && bounds.isValid()) {
             map.fitBounds(bounds);
           } else if (layerALTrack.getLayers().length > 0) {
-            // Alternative: try to get bounds from layerGroup
             try {
               const groupBounds = layerALTrack.getBounds();
               if (groupBounds.isValid()) {
@@ -257,7 +249,7 @@
       updateLoadingState('stationLayout', true);
       debugLog('Loading Station Layout...');
       
-      const timeoutId = createTimeout('Station Layout', 30000); // Longer timeout for large data
+      const timeoutId = createTimeout('Station Layout', 30000);
       
       omnivore
         .kml("Station.kml")
@@ -297,12 +289,10 @@
       updateLoadingState('stationName', true);
       debugLog('Loading Station Names...');
 
-      // Check if L.AwesomeMarkers is available
       if (typeof L.AwesomeMarkers === 'undefined') {
         console.error('L.AwesomeMarkers is not loaded!');
         alert('Error: Awesome Markers library not loaded. Using default markers.');
         
-        // Fallback to default markers
         const defaultIcon = L.icon({
           iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -316,7 +306,6 @@
         return;
       }
 
-      // Define icons for different styles - matching KML styleUrl
       const icons = {
         station: L.AwesomeMarkers.icon({
           icon: "train",
@@ -357,30 +346,24 @@
               let styleUrl = null;
               let coords = null;
 
-              // Extract data from KML structure
               if (layer.feature && layer.feature.properties) {
                 const props = layer.feature.properties;
                 stationName = props.name || props.Name;
                 styleUrl = props.styleUrl;
-                
-                // Get coordinates from geometry
                 if (layer.feature.geometry && layer.feature.geometry.coordinates) {
                   const geomCoords = layer.feature.geometry.coordinates;
-                  coords = [geomCoords[1], geomCoords[0]]; // [lat, lng] from [lng, lat, alt]
+                  coords = [geomCoords[1], geomCoords[0]];
                 }
               }
 
-              // Fallback to layer methods
               if (!coords && layer.getLatLng) {
                 coords = layer.getLatLng();
               }
 
-              // Clean up styleUrl (remove # prefix)
               if (styleUrl && styleUrl.startsWith("#")) {
                 styleUrl = styleUrl.substring(1);
               }
 
-              // Debug log for troubleshooting
               if (DEBUG) {
                 console.log('Processing layer:', {
                   name: stationName,
@@ -390,7 +373,6 @@
                 });
               }
 
-              // Create marker if we have valid data
               if (coords && stationName) {
                 const icon = icons[styleUrl] || icons.default;
                 const marker = L.marker(coords, { icon: icon }).bindTooltip(
@@ -440,29 +422,12 @@
         });
     }
 
-    // 4. Load Show STA (blue dot markers from Sta.kml)
+    // 4. Load Show STA (blue circle markers from Sta.kml)
     function loadShowSTA() {
       if (isShowSTALoaded) return;
       
       updateLoadingState('showSTA', true);
       debugLog('Loading Show STA...');
-
-      // Define icon for STA stations
-      const staIcon = L.AwesomeMarkers.icon({
-        icon: "dot-circle",
-        markerColor: "blue",
-        prefix: "fas",
-      });
-
-      // Fallback icon if AwesomeMarkers is not available
-      const fallbackIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
 
       const timeoutId = createTimeout('Show STA', 20000);
 
@@ -480,24 +445,19 @@
               let stationName = null;
               let coords = null;
 
-              // Extract data from KML structure
               if (layer.feature && layer.feature.properties) {
                 const props = layer.feature.properties;
                 stationName = props.name || props.Name;
-                
-                // Get coordinates from geometry
                 if (layer.feature.geometry && layer.feature.geometry.coordinates) {
                   const geomCoords = layer.feature.geometry.coordinates;
-                  coords = [geomCoords[1], geomCoords[0]]; // [lat, lng] from [lng, lat, alt]
+                  coords = [geomCoords[1], geomCoords[0]];
                 }
               }
 
-              // Fallback to layer methods
               if (!coords && layer.getLatLng) {
                 coords = layer.getLatLng();
               }
 
-              // Debug log for troubleshooting
               if (DEBUG) {
                 console.log('Processing STA layer:', {
                   name: stationName,
@@ -506,25 +466,30 @@
                 });
               }
 
-              // Create marker if we have valid data
               if (coords && stationName) {
-                const icon = typeof L.AwesomeMarkers !== 'undefined' ? staIcon : fallbackIcon;
-                const marker = L.marker(coords, { icon: icon })
-                  .bindTooltip(
-                    `${stationName}`,
-                    {
-                      permanent: true,
-                      direction: "top",
-                      offset: [0, -10],
-                      className: "sta-tooltip",
-                    }
-                  )
-                  .bindPopup(`
-                    <div style="text-align: center;">
-                      <strong>Station ${stationName}</strong><br>
-                      <small>Coordinates: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}</small>
-                    </div>
-                  `);
+                // ใช้ marker แบบวงกลมสีฟ้า
+                const marker = L.circleMarker(coords, {
+                  radius: 8,
+                  color: '#2196f3',
+                  fillColor: '#2196f3',
+                  fillOpacity: 0.9,
+                  weight: 2
+                })
+                .bindTooltip(
+                  `${stationName}`,
+                  {
+                    permanent: true,
+                    direction: "top",
+                    offset: [0, -10],
+                    className: "sta-tooltip",
+                  }
+                )
+                .bindPopup(`
+                  <div style="text-align: center;">
+                    <strong>Station ${stationName}</strong><br>
+                    <small>Coordinates: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}</small>
+                  </div>
+                `);
                 layerShowSTA.addLayer(marker);
                 markerCount++;
               } else {
@@ -563,7 +528,6 @@
         });
     }
 
-    // Fallback function for when AwesomeMarkers is not available
     function loadStationNameWithFallback(defaultIcon) {
       const timeoutId = createTimeout('Station Name', 20000);
 
@@ -581,24 +545,19 @@
               let stationName = null;
               let coords = null;
 
-              // Extract data from KML structure
               if (layer.feature && layer.feature.properties) {
                 const props = layer.feature.properties;
                 stationName = props.name || props.Name;
-                
-                // Get coordinates from geometry
                 if (layer.feature.geometry && layer.feature.geometry.coordinates) {
                   const geomCoords = layer.feature.geometry.coordinates;
-                  coords = [geomCoords[1], geomCoords[0]]; // [lat, lng] from [lng, lat, alt]
+                  coords = [geomCoords[1], geomCoords[0]];
                 }
               }
 
-              // Fallback to layer methods
               if (!coords && layer.getLatLng) {
                 coords = layer.getLatLng();
               }
 
-              // Create marker if we have valid data
               if (coords && stationName) {
                 const marker = L.marker(coords, { icon: defaultIcon }).bindTooltip(
                   stationName,
@@ -651,7 +610,6 @@
       collapsed: false,
     }).addTo(map);
 
-    // Handle overlay add event to load data on demand
     map.on("overlayadd", (e) => {
       switch (e.name) {
         case "AL Track KKNK (red)":
@@ -673,7 +631,6 @@
       }
     });
 
-    // Handle overlay remove event
     map.on("overlayremove", (e) => {
       switch (e.name) {
         case "AL Track KKNK (red)":
@@ -691,11 +648,9 @@
       }
     });
 
-    // Initialize map with AL Track loaded and shown
     loadALTrack();
     layerALTrack.addTo(map);
 
-    // Add scale control (metric only)
     L.control
       .scale({
         metric: true,
@@ -704,24 +659,20 @@
       })
       .addTo(map);
 
-    // Move zoom control to top right
     map.removeControl(map.zoomControl);
     L.control.zoom({
       position: "topright",
     }).addTo(map);
 
-    // Log clicks for debug
     map.on("click", (e) => {
       debugLog(`Clicked at: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
     });
 
-    // Global error logging
     window.addEventListener("error", (e) => {
       console.error("Global error:", e.error);
       debugLog(`Global error: ${e.error.message}`);
     });
 
-    // Check if files exist on load
     function checkFileAccess() {
       const files = ['AL_Track_KKNK.kml', 'Station.kml', 'Station_Name.kml', 'Sta.kml'];
       files.forEach(file => {
@@ -737,7 +688,6 @@
       });
     }
 
-    // Check library loading
     function checkLibraries() {
       const libraries = [
         { name: 'Leaflet', obj: 'L' },
@@ -762,7 +712,6 @@
       });
     }
 
-    // Check file access and libraries on page load
     window.addEventListener('load', () => {
       checkFileAccess();
       checkLibraries();
